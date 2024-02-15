@@ -4,13 +4,26 @@ using Grpc.Net.Client;
 using ProtoDefinitions;
 using System.Threading.Tasks;
 using System;
+using System.Net.Http;
 
 public class ExternalMovieApiProxy : IExternalMovieApiProxy
 {
     private readonly MoviesApi.MoviesApiClient _client;
 
-    public ExternalMovieApiProxy(GrpcChannel channel)
+    public ExternalMovieApiProxy()
     {
+         var httpHandler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback =
+                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+
+        var channel =
+            GrpcChannel.ForAddress("https://localhost:7443", new GrpcChannelOptions()
+            {
+                HttpHandler = httpHandler
+            });
+
         _client = new MoviesApi.MoviesApiClient(channel);
     }
 
@@ -19,7 +32,7 @@ public class ExternalMovieApiProxy : IExternalMovieApiProxy
         // read from ioptions monitor configuration
         return new Metadata
         {
-            { "X-Apikey", "your-api-key-here" }
+            { "X-Apikey", "68e5fbda-9ec9-4858-97b2-4a8349764c63" }
         };
     }
 

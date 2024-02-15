@@ -1,3 +1,5 @@
+using ApiApplication.Application;
+using ApiApplication.Application.Abstractions;
 using ApiApplication.Application.Proxies;
 using ApiApplication.Application.Proxies.Abstractions;
 using ApiApplication.Database;
@@ -11,7 +13,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using System.Reflection;
 
 namespace ApiApplication
 {
@@ -28,6 +29,9 @@ namespace ApiApplication
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddScoped<IExternalMovieApiProxy, ExternalMovieApiProxy>();
+            services.Decorate<IExternalMovieApiProxy, CachedMovieApiProxyDecorator>();
+            services.AddScoped<ICacheService, CacheService>();
+
             services.AddTransient<IShowtimesRepository, ShowtimesRepository>();
             services.AddTransient<ITicketsRepository, TicketsRepository>();
             services.AddTransient<IAuditoriumsRepository, AuditoriumsRepository>();

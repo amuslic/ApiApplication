@@ -28,7 +28,7 @@ namespace ApiApplication.Application.Commands
                 ImdbId = movie.ImDbRating,
                 Stars = movie.Crew
             };
-
+            // create mapper
             var showtime = new ShowtimeEntity
             {
                 Movie = domainMovie,
