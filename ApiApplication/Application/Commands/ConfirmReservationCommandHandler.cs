@@ -23,17 +23,17 @@ namespace ApiApplication.Application.Commands
 
             if (ticket is null)
             {
-                throw new NotFoundException(StatusCodes.Status404NotFound, "Reservation with id {request.ReservationId} not found");
+                throw new NotFoundException(StatusCodes.Status404NotFound, $"Reservation with id {request.ReservationId} not found");
             }
 
             if (ticket.Paid)
             {
-                throw new BadRequestException(StatusCodes.Status400BadRequest, "Reservation with id {request.ReservationId} is already paid");
+                throw new BadRequestException(StatusCodes.Status400BadRequest, $"Reservation with id {request.ReservationId} is already paid");
             }
 
             if ((DateTime.Now - ticket.CreatedTime).TotalMinutes > 10)
             {
-                throw new BadRequestException(StatusCodes.Status400BadRequest, "Reservation with id {request.ReservationId}has expired and cannot be confirmed");
+                throw new BadRequestException(StatusCodes.Status400BadRequest, $"Reservation with id {request.ReservationId}has expired and cannot be confirmed");
             }
 
             ticket.Paid = true;
