@@ -1,9 +1,10 @@
 ﻿using MediatR;
+using System;
 using System.Collections.Generic;
 
 namespace ApiApplication.Application.Commands
 {
-    public class ReserveSeatsCommand : IRequest<(bool IsSuccess, string ReservationId, string ErrorMessage)>
+    public class ReserveSeatsCommand : IRequest<Guid>
     {
         public int ShowtimeId { get; set; }
         public List<short> SeatNumbers { get; set; }

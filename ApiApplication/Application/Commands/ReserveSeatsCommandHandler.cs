@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace ApiApplication.Application.Commands
 {
-    public class ReserveSeatsCommandHandler : IRequestHandler<ReserveSeatsCommand, (bool IsSuccess, string ReservationId, string ErrorMessage)>
+    public class ReserveSeatsCommandHandler : IRequestHandler<ReserveSeatsCommand, Guid>
     {
         private readonly ITicketsRepository _ticketsRepository;
         private readonly IAuditoriumsRepository _auditoriumsRepository;
@@ -22,7 +22,7 @@ namespace ApiApplication.Application.Commands
             _auditoriumsRepository = auditoriumsRepository;
         }
 
-        public async Task<(bool IsSuccess, string ReservationId, string ErrorMessage)> Handle(ReserveSeatsCommand request, CancellationToken cancellationToken)
+        public async Task<Guid> Handle(ReserveSeatsCommand request, CancellationToken cancellationToken)
         {
             if (!AreSeatsContiguous(request.SeatNumbers))
             {
@@ -60,7 +60,7 @@ namespace ApiApplication.Application.Commands
 
             var reservation = await _ticketsRepository.CreateAsync(showtime, selectedSeats, cancellationToken);
 
-            return (true, reservation.Id.ToString(), $"Reserved {selectedSeats.Count} seats for Showtime {showtime.Id} in Auditorium {auditorium.Id}.");
+            return reservation.Id;
         }
 
         private bool AreSeatsContiguous(List<short> seatNumbers)

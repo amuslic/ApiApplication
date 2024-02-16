@@ -20,10 +20,13 @@ public class ShowtimeController : ControllerBase
         _mediator = mediator;
     }
 
-    [HttpPost]
+    [HttpPost("create-showtime")]
+    [ProducesResponseType(typeof(ReserveSeatsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateShowtime([FromBody] CreateShowtimeRequest request)
     {
-
         var command = new CreateShowtimeCommand
         {
             MovieId = request.MovieId,
