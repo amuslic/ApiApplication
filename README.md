@@ -2,7 +2,6 @@
 
 ## Requirements
 - **Create showtime**
-    
     Should create showtime and should grab the movie data from the ProvidedApi.
     
 - **Reserve seats**
@@ -32,8 +31,31 @@ Please provider tests for implemented route
 
 ### Third party provider
 
-If possible fix the grpc implementation and communicate through it with third party provider
+If possible communicate with third party provider through grpc
 
 
 ## Solution
+To initiate the application, please follow these steps:
+
+1. **Clone the Repository**: Start by cloning the repository to your local machine.
+2. **Install Docker**: Ensure Docker is installed and running on your system. Docker is required to manage the application's containers.
+3. **Run Docker Compose**: Navigate to the project's root directory and execute `docker-compose up`. This command starts the necessary services, including the third-party provider, Redis instance, and an SQL in-memory database that generates sample data upon application start.
+
+The application is accessible via `http://localhost/swagger/index.html` by default. Here, you can explore and interact with the API through the Swagger UI, which simplifies the process of testing various endpoints.
+
+## Architecture and Implementation Details
+
+- **MediatR and CQRS Pattern**: The solution implements the MediatR library to follow the CQRS (Command Query Responsibility Segregation) pattern, allowing for clear separation of command and query responsibilities.
+- **Redis Cache**: A Redis cache is utilized to store responses from the Provided API. The cache uses protobuf serialization for efficient data storage, which is not human-readable if accessed via a viewer.
+- **Execution Tracking**: Execution times for requests are tracked and logged to the console through MediatR pipeline behavior.
+- **Exception Handling**: The API leverages a .NET exception filter (`onActionExecuted`) to handle exceptions
+- **Layered Architecture**: The project is structured into distinct layers (Application, API, and Infrastructure) to separate concerns, which are for simplicitly represented in folders and not libraries
+
+## Testing
+
+- **Integration Tests**: The system includes integration tests that utilize their own in-memory SQL database
+
+## Running Tests
+
+Integration tests can be executed through your preferred IDE or command line tool, ensuring that all components function correctly in isolation and when integrated.
 
