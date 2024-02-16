@@ -1,8 +1,10 @@
 ﻿using ApiApplication.Api.Models;
 using ApiApplication.Application.Commands;
+using ApiApplication.Application.Models;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ApiApplication.Api.Controllers
@@ -31,7 +33,13 @@ namespace ApiApplication.Api.Controllers
                 return BadRequest(ModelState);
             }
 
-            var command = new ReserveSeatsCommand(request.ShowtimeId, request.SeatNumbers, request.AuditoriumId);
+            var seatReservations = request.Seats.Select(s => new SeatReservation()
+            {
+                SeatNumber = s.SeatNumber,
+                Row = s.RowNumber
+            }).ToList();
+
+            var command = new ReserveSeatsCommand(request.ShowtimeId, seatReservations, request.AuditoriumId);
             var reservationId = await _mediator.Send(command);
 
             var responseObject = new ReserveSeatsResponse()

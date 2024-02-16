@@ -3,14 +3,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ApiApplication.Api.Models
 {
-    public class ReserveSeatsRequest
+    public record ReserveSeatsRequest
     {
-        public int ShowtimeId { get; set; }
+        public int ShowtimeId { get; init; }
 
         [MinLength(1, ErrorMessage = "At least one seat number must be specified.")]
-        public List<short> SeatNumbers { get; set; }
+        public List<SeatReservationRequest> Seats { get; init; }
 
-        public int AuditoriumId { get; set; }
+        public int AuditoriumId { get; init; }
     }
 
 }

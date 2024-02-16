@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using ApiApplication.Application.Exceptions;
 using Microsoft.AspNetCore.Http;
+using ApiApplication.Application.Models;
 
 namespace ApiApplication.Application.Commands
 {
@@ -49,29 +50,37 @@ namespace ApiApplication.Application.Commands
                 .SelectMany(t => t.Seats)
                 .ToList();
 
-            var isAnySeatUnavailable = request.SeatNumbers.Any(seatNumber =>
-                recentlyReservedSeats.Any(s => s.SeatNumber == seatNumber));
+            var isAnySeatUnavailable = request.SeatNumbers.Any(requestedSeat =>
+                recentlyReservedSeats.Any(reservedSeat => reservedSeat.Row == requestedSeat.Row && reservedSeat.SeatNumber == requestedSeat.SeatNumber));
 
             if (isAnySeatUnavailable)
             {
                 throw new BadRequestException(StatusCodes.Status400BadRequest, "One or more seats are not available or have been reserved/sold within the last 10 minutes.");
             }
 
-            var selectedSeats = auditorium.Seats.Where(s => request.SeatNumbers.Contains(s.SeatNumber)).ToList();
+            var selectedSeats = auditorium.Seats.Where(auditoriumSeat =>
+                request.SeatNumbers.Any(requestedSeat => requestedSeat.Row == auditoriumSeat.Row && requestedSeat.SeatNumber == auditoriumSeat.SeatNumber)).ToList();
 
             var reservation = await _ticketsRepository.CreateAsync(showtime, selectedSeats, cancellationToken);
 
             return reservation.Id;
         }
 
-        private bool AreSeatsContiguous(List<short> seatNumbers)
+        private bool AreSeatsContiguous(List<SeatReservation> seatReservations)
         {
-            seatNumbers.Sort();
-            for (int i = 0; i < seatNumbers.Count - 1; i++)
+            var groupedByRow = seatReservations.GroupBy(sr => sr.Row).ToList();
+
+            foreach (var group in groupedByRow)
             {
-                if (seatNumbers[i] + 1 != seatNumbers[i + 1])
-                    return false;
+                var seatNumbersInRow = group.Select(sr => sr.SeatNumber).OrderBy(n => n).ToList();
+
+                for (int i = 0; i < seatNumbersInRow.Count - 1; i++)
+                {
+                    if (seatNumbersInRow[i] + 1 != seatNumbersInRow[i + 1])
+                        return false;
+                }
             }
+
             return true;
         }
     }

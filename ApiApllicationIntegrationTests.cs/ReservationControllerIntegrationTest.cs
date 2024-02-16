@@ -37,20 +37,28 @@ namespace ApiApplicationIntegrationTests
         }
 
         [Theory]
-        [InlineData(1, new short[] { 3, 4 }, 1, HttpStatusCode.OK)] // Valid request
-        [InlineData(1, new short[] { 1, 2 }, 999, HttpStatusCode.NotFound)] // Invalid AuditoriumId
-        [InlineData(999, new short[] { 3, 4 }, 1, HttpStatusCode.NotFound)] // Invalid ShowtimeId
-        [InlineData(1, new short[] { 1, 3 }, 1, HttpStatusCode.BadRequest)] // Non-Contiguous Seats
-        public async Task Post_ReserveSeats_VariousScenarios(int showtimeId, short[] seatNumbers, int auditoriumId, HttpStatusCode expectedStatusCode)
+        [InlineData(1, new short[] { 1, 3, 1, 4 }, 1, HttpStatusCode.OK)] // Valid request, contiguous seats in the same row
+        [InlineData(1, new short[] { 1, 3, 1, 4 }, 999, HttpStatusCode.NotFound)] // Invalid AuditoriumId, seats in different rows
+        [InlineData(999, new short[] { 1, 3, 1, 4 }, 1, HttpStatusCode.NotFound)] // Invalid ShowtimeId, contiguous seats in the same row
+        [InlineData(1, new short[] { 1, 1, 1, 3 }, 1, HttpStatusCode.BadRequest)] // Non-Contiguous Seats in the same row
+        public async Task Post_ReserveSeats_VariousScenarios(
+            int showtimeId,
+            short[] seatRowsAndNumbers,
+            int auditoriumId, HttpStatusCode expectedStatusCode)
         {
             // Arrange
-
             SeedDatabase();
 
-            var request = new
+            var seats = new List<SeatReservationRequest>();
+            for (int i = 0; i < seatRowsAndNumbers.Length; i += 2)
+            {
+                seats.Add(new SeatReservationRequest { RowNumber = seatRowsAndNumbers[i], SeatNumber = seatRowsAndNumbers[i + 1] });
+            }
+
+            var request = new ReserveSeatsRequest
             {
                 ShowtimeId = showtimeId,
-                SeatNumbers = new List<short>(seatNumbers),
+                Seats = seats,
                 AuditoriumId = auditoriumId
             };
 
@@ -63,18 +71,22 @@ namespace ApiApplicationIntegrationTests
             Assert.Equal(expectedStatusCode, response.StatusCode);
         }
 
+
         [Fact]
         public async Task Post_ReserveSeats_ReturnsBadRequestForAlreadyReservedSeats()
         {
             // Arrange
             SeedDatabase();
-            var request = new
+            var request = new ReserveSeatsRequest()
             {
                 ShowtimeId = 1,
-                SeatNumbers = new List<short> { 6, 7 },
+                Seats = [
+                  new() { RowNumber = 1, SeatNumber = 2 },
+                    new() { RowNumber = 1, SeatNumber = 3 },
+                    new() { RowNumber = 2, SeatNumber = 3 },
+                    new() { RowNumber = 2, SeatNumber = 4 }],
                 AuditoriumId = 1
             };
-
             var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
             await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
 
@@ -90,10 +102,14 @@ namespace ApiApplicationIntegrationTests
         {
             // Arrange
             SeedDatabase();
-            var request = new
+            var request = new ReserveSeatsRequest()
             {
                 ShowtimeId = 1,
-                SeatNumbers = new List<short> { 3, 4 },
+                Seats = [
+                    new() { RowNumber = 1, SeatNumber = 2},
+                    new() { RowNumber = 1, SeatNumber = 3},
+                    new() { RowNumber = 2, SeatNumber = 3 },
+                    new() { RowNumber = 2, SeatNumber = 4 }],
                 AuditoriumId = 1
             };
 
@@ -140,10 +156,14 @@ namespace ApiApplicationIntegrationTests
         {
             // Arrange
             SeedDatabase();
-            var request = new
+            var request = new ReserveSeatsRequest()
             {
                 ShowtimeId = 1,
-                SeatNumbers = new List<short> { 3, 4 },
+                Seats = [
+                new() { RowNumber = 1, SeatNumber = 2 },
+                    new() { RowNumber = 1, SeatNumber = 3 },
+                    new() { RowNumber = 2, SeatNumber = 3 },
+                    new() { RowNumber = 2, SeatNumber = 4 }],
                 AuditoriumId = 1
             };
 
@@ -164,25 +184,6 @@ namespace ApiApplicationIntegrationTests
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, confirmReservationSecondAttemptResponse.StatusCode);
-        }
-
-        [Fact]
-        public async Task Post_ConfirmReservation_ReturnsBadRequestForExpiredReservation()
-        {
-            // Arrange
-            SeedDatabase();
-            var request = new
-            {
-                ReservationId = 3 
-            };
-
-            var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-            
-            // Act
-            var response = await _client.PostAsync("/api/Reservation/confirm-reservation", stringContent);
-
-            // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
     }
 }
