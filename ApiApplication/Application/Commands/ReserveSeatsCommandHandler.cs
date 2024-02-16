@@ -45,13 +45,13 @@ namespace ApiApplication.Application.Commands
 
             var ticketsForShowtime = await _ticketsRepository.GetEnrichedAsync(request.ShowtimeId, cancellationToken);
 
-            var recentlyReservedSeats = ticketsForShowtime
-                .Where(t => (DateTime.Now - t.CreatedTime).TotalMinutes < 10)
-                .SelectMany(t => t.Seats)
-                .ToList();
+            var recentlyReservedSeats = new HashSet<(short Row, short SeatNumber)>(ticketsForShowtime
+              .Where(t => (DateTime.Now - t.CreatedTime).TotalMinutes < 10)
+              .SelectMany(t => t.Seats)
+              .Select(s => (s.Row, s.SeatNumber)));
 
             var isAnySeatUnavailable = request.SeatNumbers.Any(requestedSeat =>
-                recentlyReservedSeats.Any(reservedSeat => reservedSeat.Row == requestedSeat.Row && reservedSeat.SeatNumber == requestedSeat.SeatNumber));
+                recentlyReservedSeats.Contains((requestedSeat.Row, requestedSeat.SeatNumber)));
 
             if (isAnySeatUnavailable)
             {
