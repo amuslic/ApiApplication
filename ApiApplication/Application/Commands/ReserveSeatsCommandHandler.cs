@@ -16,7 +16,8 @@ namespace ApiApplication.Application.Commands
         private readonly IAuditoriumsRepository _auditoriumsRepository;
 
         public ReserveSeatsCommandHandler(
-            ITicketsRepository ticketsRepository, IAuditoriumsRepository auditoriumsRepository)
+            ITicketsRepository ticketsRepository,
+            IAuditoriumsRepository auditoriumsRepository)
         {
             _ticketsRepository = ticketsRepository;
             _auditoriumsRepository = auditoriumsRepository;
@@ -32,7 +33,7 @@ namespace ApiApplication.Application.Commands
             var auditorium = await _auditoriumsRepository.GetAsync(request.AuditoriumId, cancellationToken);
             if (auditorium is null)
             {
-                throw new NotFoundException(StatusCodes.Status404NotFound, $"Auditorum with id {request.AuditoriumId} doesnt exist");
+                throw new NotFoundException(StatusCodes.Status404NotFound, $"Auditorium with id {request.AuditoriumId} doesnt exist");
             }
 
             var showtime = auditorium.Showtimes?.FirstOrDefault(st => st.Id == request.ShowtimeId);

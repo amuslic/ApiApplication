@@ -7,7 +7,7 @@ using ProtoDefinitions;
 using System.Net;
 using System.Text;
 using Moq;
-using ApiApplicationIntegrationTests.cs.Utils;
+using ApiApplicationIntegrationTests.Utils;
 using ApiApplication.Database;
 using Microsoft.AspNetCore.Builder;
 using static ApiApplicationIntegrationTests.Data.SampleDataForReservationTests;
@@ -30,7 +30,6 @@ namespace ApiApplicationIntegrationTests
                     services.AddScoped(_ => _movieApiProxyMock.Object);
                 });
             }).CreateClient();
-            SeedDatabase();
         }
 
         private void SeedDatabase()
@@ -66,25 +65,38 @@ namespace ApiApplicationIntegrationTests
         [Fact]
         public async Task Post_CreateShowtime_ReturnsOkWithShowtimeId()
         {
+            // Arrange
+            SeedDatabase();
             var fakeMovieResponse = new showResponse { Title = "Fake Movie", ImDbRating = "8.5", Crew = "Fake Director, Fake Actor" };
             SetupMockGetByIdAsync(fakeMovieResponse);
 
             var request = new CreateShowtimeRequest { MovieId = "1", SessionDate = DateTime.Now.AddDays(1), AuditoriumId = 1 };
+            
+            // Act
             var response = await _client.PostAsync("/api/showtime/create-showtime", CreateRequestContent(request));
 
+            // Assert
             response.EnsureSuccessStatusCode();
         }
 
         [Theory]
         [InlineData("55", true, null, HttpStatusCode.InternalServerError)] // External service failure
         [InlineData("999", false, null, HttpStatusCode.NotFound)] // Movie not found
-        public async Task Post_CreateShowtime_VariousScenarios(string movieId, bool shouldThrow, showResponse movieResponse, HttpStatusCode expectedStatusCode)
+        public async Task Post_CreateShowtime_VariousScenarios(
+            string movieId,
+            bool shouldThrow,
+            showResponse movieResponse,
+            HttpStatusCode expectedStatusCode)
         {
+            // Arrange
             SetupMockGetByIdAsync(movieResponse, shouldThrow);
 
             var request = new CreateShowtimeRequest { MovieId = movieId, SessionDate = DateTime.Now.AddDays(1), AuditoriumId = 1 };
+            
+            // Act
             var response = await _client.PostAsync("/api/showtime/create-showtime", CreateRequestContent(request));
-
+           
+            // Assert
             Assert.Equal(expectedStatusCode, response.StatusCode);
         }
     }

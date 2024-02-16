@@ -8,6 +8,9 @@ using ApiApplication.Application.Abstractions;
 using ApiApplication.Application.Configuration;
 using Microsoft.Extensions.Options;
 using System.Runtime.InteropServices;
+using System.Linq;
+using ApiApplication.Application.Exceptions;
+using Microsoft.AspNetCore.Http;
 
 namespace ApiApplication.Application;
 
@@ -59,22 +62,27 @@ public class ExternalMovieApiProxy : IExternalMovieApiProxy
 
     public async Task<showResponse> GetByIdAsync(string id)
     {
-        try
-        {
-            var headers = GetDefaultHeaders();
-            var request = new IdRequest { Id = id };
-            var movie = await _client.GetByIdAsync(request, new CallOptions(headers));
+        var headers = GetDefaultHeaders();
+        var request = new IdRequest { Id = id };
+        var movie = await _client.GetByIdAsync(request, new CallOptions(headers));
 
-            if (movie.Data.TryUnpack<showResponse>(out var data))
+        if (movie.Exceptions.Any())
+        {
+            // client doesnt have better exception handling, no status code
+            if (movie.Exceptions.FirstOrDefault().Message.Contains("Not found"))
             {
-                return data;
+                throw new NotFoundException
+                    (StatusCodes.Status404NotFound, 
+                    $"Movie with id {id} doesnt exist");
             }
-
-            throw new InvalidOperationException("Failed to unpack the showResponse.");
         }
-        catch (Exception ex)
+                
+               
+        if (movie.Data.TryUnpack<showResponse>(out var data))
         {
-            throw new ExternalException($"Failed to fetch movie {id}.");
+            return data;
         }
+
+        throw new InvalidOperationException("Failed to unpack the showResponse.");
     }
 }

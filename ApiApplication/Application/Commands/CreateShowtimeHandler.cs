@@ -6,6 +6,7 @@ using ApiApplication.Database.Repositories.Abstractions;
 using ApiApplication.Application.Abstractions;
 using ApiApplication.Application.Exceptions;
 using Microsoft.AspNetCore.Http;
+using ApiApplication.Database.Repositories;
 
 namespace ApiApplication.Application.Commands
 {
@@ -13,20 +14,26 @@ namespace ApiApplication.Application.Commands
     {
         private readonly IShowtimesRepository _showtimeRepository;
         private readonly IExternalMovieApiProxy _externalMovieApiProxy;
+        private readonly IAuditoriumsRepository _auditoriumsRepository;
 
-        public CreateShowtimeHandler(IShowtimesRepository showtimeRepository, IExternalMovieApiProxy externalMovieApiProxy)
+        public CreateShowtimeHandler(
+            IShowtimesRepository showtimeRepository,
+            IExternalMovieApiProxy externalMovieApiProxy,
+            IAuditoriumsRepository auditoriumsRepository)
         {
             _showtimeRepository = showtimeRepository;
             _externalMovieApiProxy = externalMovieApiProxy;
+            _auditoriumsRepository = auditoriumsRepository;
         }
 
         public async Task<int> Handle(CreateShowtimeCommand request, CancellationToken cancellationToken)
         {
             var movie = await _externalMovieApiProxy.GetByIdAsync(request.MovieId.ToString());
 
-            if (movie is null)
+            var auditorium = await _auditoriumsRepository.GetAsync(request.AuditoriumId, cancellationToken);
+            if (auditorium is null)
             {
-                throw new NotFoundException(StatusCodes.Status404NotFound, $"Movie with id {request.MovieId} doesnt exist");
+                throw new NotFoundException(StatusCodes.Status404NotFound, $"Auditorium with id {request.AuditoriumId} doesnt exist");
             }
 
             var domainMovie = new MovieEntity()

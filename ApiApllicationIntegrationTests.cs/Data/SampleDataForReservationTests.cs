@@ -11,6 +11,7 @@ namespace ApiApplicationIntegrationTests.Data
         {
             using var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
             var context = serviceScope.ServiceProvider.GetService<CinemaContext>();
+            context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
 
             if (!context.Auditoriums.Any())

@@ -1,7 +1,7 @@
 using ApiApplication;
 using ApiApplication.Api.Models;
 using ApiApplication.Database;
-using ApiApplicationIntegrationTests.cs.Utils;
+using ApiApplicationIntegrationTests.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -9,7 +9,7 @@ using System.Net;
 using System.Text;
 using static ApiApplicationIntegrationTests.Data.SampleDataForReservationTests;
 
-namespace ApiApllicationIntegrationTests.cs
+namespace ApiApplicationIntegrationTests
 {
     [Collection(nameof(ReservationControllerIntegrationTest))]
     [Trait("Category", "Integration")]
@@ -22,7 +22,7 @@ namespace ApiApllicationIntegrationTests.cs
         {
             _factory = factory;
             _client = _factory.CreateClient();
-            SeedDatabase();
+          
         }
 
         private void SeedDatabase()
@@ -44,6 +44,9 @@ namespace ApiApllicationIntegrationTests.cs
         public async Task Post_ReserveSeats_VariousScenarios(int showtimeId, short[] seatNumbers, int auditoriumId, HttpStatusCode expectedStatusCode)
         {
             // Arrange
+
+            SeedDatabase();
+
             var request = new
             {
                 ShowtimeId = showtimeId,
@@ -64,6 +67,7 @@ namespace ApiApllicationIntegrationTests.cs
         public async Task Post_ReserveSeats_ReturnsBadRequestForAlreadyReservedSeats()
         {
             // Arrange
+            SeedDatabase();
             var request = new
             {
                 ShowtimeId = 1,
@@ -85,6 +89,7 @@ namespace ApiApllicationIntegrationTests.cs
         public async Task Post_ConfirmReservation_ReturnsOkForValidRequest()
         {
             // Arrange
+            SeedDatabase();
             var request = new
             {
                 ShowtimeId = 1,
@@ -114,14 +119,19 @@ namespace ApiApllicationIntegrationTests.cs
         [Fact]
         public async Task Post_ConfirmReservation_ReturnsBadRequestForNonExistentReservation()
         {
+            // Arrange
+            SeedDatabase();
             var request = new
             {
                 ReservationId = 999
             };
 
             var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+           
+            // Act
             var response = await _client.PostAsync("/api/Reservation/confirm-reservation", stringContent);
 
+            // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
@@ -129,7 +139,7 @@ namespace ApiApllicationIntegrationTests.cs
         public async Task Post_ConfirmReservation_ReturnsBadRequestForAlreadyConfirmedReservation()
         {
             // Arrange
-
+            SeedDatabase();
             var request = new
             {
                 ShowtimeId = 1,
@@ -159,14 +169,19 @@ namespace ApiApllicationIntegrationTests.cs
         [Fact]
         public async Task Post_ConfirmReservation_ReturnsBadRequestForExpiredReservation()
         {
+            // Arrange
+            SeedDatabase();
             var request = new
             {
                 ReservationId = 3 
             };
 
             var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            
+            // Act
             var response = await _client.PostAsync("/api/Reservation/confirm-reservation", stringContent);
 
+            // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
     }
