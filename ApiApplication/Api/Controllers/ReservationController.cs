@@ -1,12 +1,15 @@
 ﻿using ApiApplication.Api.Models;
 using ApiApplication.Application.Commands;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 
 namespace ApiApplication.Api.Controllers
 {
     [Route("api/[controller]")]
+    [Tags("Reservations")]
     [ApiController]
     public class ReservationController : ControllerBase
     {
@@ -18,39 +21,37 @@ namespace ApiApplication.Api.Controllers
         }
 
         [HttpPost("reserve-seats")]
-        public async Task<IActionResult> ReserveSeats([FromBody] ReserveSeatsApiRequest request)
+        [ProducesResponseType(typeof(ReserveSeatsResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> ReserveSeats([FromBody] ReserveSeatsRequest request)
         {
-            // Validate the API request
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            // Convert API request to command
             var command = new ReserveSeatsCommand(request.ShowtimeId, request.SeatNumbers, request.AuditoriumId);
-
-            // Send command to mediator
             var (IsSuccess, ReservationId, ErrorMessage) = await _mediator.Send(command);
 
-            if (IsSuccess)
+            var responseObject = new ReserveSeatsResponse()
             {
-                return Ok(new { ReservationId = ReservationId });
-            }
+                ReservationId = Guid.Parse(ReservationId)
+            };
 
-            return BadRequest(new { Error = ErrorMessage });
+                return Ok(responseObject);
         }
 
         [HttpPost("confirm-reservation")]
-        public async Task<IActionResult> ConfirmReservation([FromBody] ConfirmReservationApiRequest request)
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> ConfirmReservation([FromBody] ConfirmReservationRequest request)
         {
             var (IsSuccess, Message) = await _mediator.Send(new ConfirmReservationCommand(request.ReservationId));
 
-            if (IsSuccess)
-            {
-                return Ok(new { Message });
-            }
+            return Ok(new { Message });
 
-            return BadRequest(new { Message });
         }
     }
 }

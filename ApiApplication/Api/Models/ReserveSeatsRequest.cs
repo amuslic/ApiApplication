@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ApiApplication.Api.Models
 {
-    public class ReserveSeatsApiRequest
+    public class ReserveSeatsRequest
     {
         public int ShowtimeId { get; set; }
 

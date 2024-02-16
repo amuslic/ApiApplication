@@ -2,7 +2,7 @@
 
 namespace ApiApplication.Api.Models
 {
-    public class ConfirmReservationApiRequest
+    public class ConfirmReservationRequest
     {
         public Guid ReservationId { get; set; }
     }

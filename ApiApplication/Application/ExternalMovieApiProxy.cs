@@ -1,38 +1,40 @@
-﻿using ApiApplication.Application.Proxies.Abstractions;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Grpc.Net.Client;
 using ProtoDefinitions;
 using System.Threading.Tasks;
 using System;
 using System.Net.Http;
+using ApiApplication.Application.Abstractions;
+using ApiApplication.Application.Configuration;
+using Microsoft.Extensions.Options;
+using System.Runtime.InteropServices;
+
+namespace ApiApplication.Application;
 
 public class ExternalMovieApiProxy : IExternalMovieApiProxy
 {
     private readonly MoviesApi.MoviesApiClient _client;
+    private readonly string _apiKey;
 
-    public ExternalMovieApiProxy()
+    public ExternalMovieApiProxy(IOptionsMonitor<ExternalMovieProviderConfiguration> movieProviderOptions)
     {
-         var httpHandler = new HttpClientHandler
+        var options = movieProviderOptions.CurrentValue;
+        _apiKey = options.ApiKey;
+
+        var httpHandler = new HttpClientHandler
         {
-            ServerCertificateCustomValidationCallback =
-                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
         };
 
-        var channel =
-            GrpcChannel.ForAddress("https://localhost:7443", new GrpcChannelOptions()
-            {
-                HttpHandler = httpHandler
-            });
-
+        var channel = GrpcChannel.ForAddress(options.Url, new GrpcChannelOptions { HttpHandler = httpHandler });
         _client = new MoviesApi.MoviesApiClient(channel);
     }
 
-    private static Metadata GetDefaultHeaders()
+    private Metadata GetDefaultHeaders()
     {
-        // read from ioptions monitor configuration
         return new Metadata
         {
-            { "X-Apikey", "68e5fbda-9ec9-4858-97b2-4a8349764c63" }
+            { "X-Apikey", _apiKey }
         };
     }
 
@@ -51,8 +53,7 @@ public class ExternalMovieApiProxy : IExternalMovieApiProxy
         }
         catch (Exception ex)
         {
-            // Log and handle exception
-            throw;
+            throw new ExternalException("Failed to fetch showListResponse.");
         }
     }
 
@@ -63,6 +64,7 @@ public class ExternalMovieApiProxy : IExternalMovieApiProxy
             var headers = GetDefaultHeaders();
             var request = new IdRequest { Id = id };
             var movie = await _client.GetByIdAsync(request, new CallOptions(headers));
+
             if (movie.Data.TryUnpack<showResponse>(out var data))
             {
                 return data;
@@ -72,8 +74,7 @@ public class ExternalMovieApiProxy : IExternalMovieApiProxy
         }
         catch (Exception ex)
         {
-            // Log and handle exception
-            throw;
+            throw new ExternalException($"Failed to fetch movie {id}.");
         }
     }
 }

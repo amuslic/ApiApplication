@@ -1,10 +1,12 @@
 using ApiApplication.Application;
 using ApiApplication.Application.Abstractions;
-using ApiApplication.Application.Proxies;
-using ApiApplication.Application.Proxies.Abstractions;
+using ApiApplication.Application.Commands;
+using ApiApplication.Application.Configuration;
 using ApiApplication.Database;
 using ApiApplication.Database.Repositories;
 using ApiApplication.Database.Repositories.Abstractions;
+using ApiApplication.Utils;
+using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +27,6 @@ namespace ApiApplication
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddScoped<IExternalMovieApiProxy, ExternalMovieApiProxy>();
@@ -42,7 +43,11 @@ namespace ApiApplication
                     .EnableSensitiveDataLogging()
                     .ConfigureWarnings(b => b.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
-            services.AddControllers();
+
+            services.AddControllers(options =>
+            {
+                options.Filters.Add(typeof(ApiExceptionFilter));
+            });
 
             services.AddHttpClient();
 
@@ -55,6 +60,10 @@ namespace ApiApplication
             {
                 cfg.RegisterServicesFromAssemblies(typeof(Startup).Assembly);
             });
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+
+            services.Configure<RedisConfiguration>(Configuration.GetSection("Redis"));
+            services.Configure<ExternalMovieProviderConfiguration>(Configuration.GetSection("ExternalMovieProvider"));
 
         }
 

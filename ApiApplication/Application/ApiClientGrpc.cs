@@ -4,7 +4,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using ProtoDefinitions;
 
-namespace ApiApplication.Application.Proxies
+namespace ApiApplication.Application
 {
     public class ApiClientGrpc
     {

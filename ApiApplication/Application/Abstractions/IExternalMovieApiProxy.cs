@@ -1,7 +1,7 @@
 ﻿using ProtoDefinitions;
 using System.Threading.Tasks;
 
-namespace ApiApplication.Application.Proxies.Abstractions
+namespace ApiApplication.Application.Abstractions
 {
     public interface IExternalMovieApiProxy
     {

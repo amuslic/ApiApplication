@@ -4,20 +4,23 @@ using System.IO;
 using System.Threading.Tasks;
 using System;
 using ApiApplication.Application.Abstractions;
+using ApiApplication.Application.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace ApiApplication.Application
 {
     public class CacheService : ICacheService
     {
-        private readonly ConnectionMultiplexer _redisConnection;
-        private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5);
         private readonly IDatabase _database;
+        private readonly TimeSpan _cacheExpiration;
 
-        //add it from config
-        public CacheService()
+        public CacheService(IOptionsMonitor<RedisConfiguration> redisOptions)
         {
-            _redisConnection = ConnectionMultiplexer.Connect("localhost:6379");
-            _database = _redisConnection.GetDatabase();
+            var options = redisOptions.CurrentValue;
+            _cacheExpiration = TimeSpan.FromMinutes(options.CacheExpirationTimeInMinutes);
+
+            var redisConnection = ConnectionMultiplexer.Connect(options.ConnectionString);
+            _database = redisConnection.GetDatabase();
         }
 
         public async Task<T> GetAsync<T>(string key) where T : IMessage<T>, new()

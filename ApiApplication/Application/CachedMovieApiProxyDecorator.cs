@@ -1,9 +1,8 @@
 ﻿using ApiApplication.Application.Abstractions;
-using ApiApplication.Application.Proxies.Abstractions;
 using ProtoDefinitions;
 using System.Threading.Tasks;
 
-namespace ApiApplication.Application.Proxies
+namespace ApiApplication.Application
 {
     public class CachedMovieApiProxyDecorator : IExternalMovieApiProxy
     {

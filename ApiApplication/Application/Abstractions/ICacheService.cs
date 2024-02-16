@@ -1,5 +1,4 @@
 ﻿using Google.Protobuf;
-using System;
 using System.Threading.Tasks;
 
 namespace ApiApplication.Application.Abstractions
