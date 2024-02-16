@@ -45,7 +45,8 @@ The application is accessible via `http://localhost/swagger/index.html` by defau
 
 ## Architecture and Implementation Details
 
-- **MediatR and CQRS Pattern**: The solution implements the MediatR library to follow the CQRS (Command Query Responsibility Segregation) pattern, allowing for clear separation of command and query responsibilities.
+- **MediatR and CQRS Pattern**: The solution implements the MediatR library to follow the CQRS (Command Query Responsibility Segregation) pattern
+- **Grpy**: Communication with third party movie provider is done via grpc client
 - **Redis Cache**: A Redis cache is utilized to store responses from the Provided API. The cache uses protobuf serialization for efficient data storage, which is not human-readable if accessed via a viewer.
 - **Execution Tracking**: Execution times for requests are tracked and logged to the console through MediatR pipeline behavior.
 - **Exception Handling**: The API leverages a .NET exception filter (`onActionExecuted`) to handle exceptions
