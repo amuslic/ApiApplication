@@ -39,7 +39,7 @@ To initiate the application, please follow these steps:
 
 1. **Clone the Repository**: Start by cloning the repository to your local machine.
 2. **Install Docker**: Ensure Docker is installed and running on your system. Docker is required to manage the application's containers.
-3. **Run Docker Compose**: Navigate to the project's root directory and execute `docker-compose up`. This command starts the necessary services, including the third-party provider, Redis instance, and an SQL in-memory database that generates sample data upon application start.
+3. **Run Docker Compose**: Navigate to the project's root directory and execute `docker-compose up`. This command starts the necessary services, including the third-party provider and Redis
 
 The application is accessible via `http://localhost/swagger/index.html` by default. Here, you can explore and interact with the API through the Swagger UI, which simplifies the process of testing various endpoints.
 
