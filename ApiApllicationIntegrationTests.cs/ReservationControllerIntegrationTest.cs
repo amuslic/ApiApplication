@@ -3,7 +3,6 @@ using ApiApplication.Api.Models;
 using ApiApplication.Database;
 using ApiApplicationIntegrationTests.cs.Utils;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Net;
@@ -162,7 +161,7 @@ namespace ApiApllicationIntegrationTests.cs
         {
             var request = new
             {
-                ReservationId = 3 // Assuming this ID exists but the reservation has expired
+                ReservationId = 3 
             };
 
             var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");

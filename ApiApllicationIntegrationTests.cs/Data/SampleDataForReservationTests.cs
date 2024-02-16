@@ -22,7 +22,7 @@ namespace ApiApplicationIntegrationTests.Data
                     {
                         new() {
                             Id = 1,
-                            SessionDate = DateTime.Now.AddDays(1), // Future showtime
+                            SessionDate = DateTime.Now.AddDays(1), 
                             Movie = new MovieEntity
                             {
                                 Id = 1,
@@ -35,7 +35,7 @@ namespace ApiApplicationIntegrationTests.Data
                             Tickets = new List<TicketEntity>()                          
                         }
                     },
-                    Seats = GenerateSeats(1, 5, 10) // Generate more seats to test contiguous and availability
+                    Seats = GenerateSeats(1, 5, 10) 
                 };
 
                 context.Auditoriums.Add(auditorium);
