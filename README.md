@@ -20,6 +20,10 @@
 
 We will like to have a cache layer to cache the response from the Provided API because the API is slow and fails a lot. We will like to call the API and in case of failure try to use the cached response. The cache should use the Redis container provided in the docker-compose.yaml
 
+### Cache
+
+Database layer is predefined and not altered
+
 ### Execution Tracking
 
 We want to track the execution time of each request done to the service and log the time in the Console.

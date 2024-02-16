@@ -5,7 +5,6 @@ namespace ApiApplication.Api.Models
 {
     public class ConfirmReservationRequest
     {
-
         [Required]
         public Guid ReservationId { get; set; }
     }
