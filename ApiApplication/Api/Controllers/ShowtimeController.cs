@@ -21,7 +21,7 @@ public class ShowtimeController : ControllerBase
     }
 
     [HttpPost("create-showtime")]
-    [ProducesResponseType(typeof(ReserveSeatsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CreateShowtimeResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
@@ -35,6 +35,11 @@ public class ShowtimeController : ControllerBase
         };
 
         var showtimeId = await _mediator.Send(command);
-        return Ok(showtimeId);
+        var responseObject = new CreateShowtimeResponse()
+        {
+            ShowtimeId = showtimeId
+        };
+
+        return Ok(responseObject);
     }
 }

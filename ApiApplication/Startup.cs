@@ -62,8 +62,8 @@ namespace ApiApplication
             });
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
-            services.Configure<RedisConfiguration>(Configuration.GetSection("Redis"));
-            services.Configure<ExternalMovieProviderConfiguration>(Configuration.GetSection("ExternalMovieProvider"));
+            services.Configure<RedisConfiguration>(Configuration.GetSection(RedisConfiguration.ConfigurationKey));
+            services.Configure<ExternalMovieProviderConfiguration>(Configuration.GetSection(ExternalMovieProviderConfiguration.ConfigurationKey));
 
         }
 
@@ -89,8 +89,8 @@ namespace ApiApplication
             SampleData.Initialize(app);
 
             app.UseSwagger();
-          
+
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1"));
-        }      
+        }
     }
 }

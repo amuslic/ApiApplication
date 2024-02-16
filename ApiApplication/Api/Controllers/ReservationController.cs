@@ -3,7 +3,6 @@ using ApiApplication.Application.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Threading.Tasks;
 
 namespace ApiApplication.Api.Controllers
@@ -33,14 +32,14 @@ namespace ApiApplication.Api.Controllers
             }
 
             var command = new ReserveSeatsCommand(request.ShowtimeId, request.SeatNumbers, request.AuditoriumId);
-            var (IsSuccess, ReservationId, ErrorMessage) = await _mediator.Send(command);
+            var reservationId = await _mediator.Send(command);
 
             var responseObject = new ReserveSeatsResponse()
             {
-                ReservationId = Guid.Parse(ReservationId)
+                ReservationId = reservationId
             };
 
-                return Ok(responseObject);
+            return Ok(responseObject);
         }
 
         [HttpPost("confirm-reservation")]
