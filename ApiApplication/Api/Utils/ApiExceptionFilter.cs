@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
 
-namespace ApiApplication.Utils
+namespace ApiApplication.Api.Utils
 {
     public class ApiExceptionFilter : IActionFilter
     {
@@ -49,7 +49,7 @@ namespace ApiApplication.Utils
 
         public void OnActionExecuting(ActionExecutingContext context)
         {
-           // no action needed
+            // no action needed
         }
     }
 }

@@ -1,3 +1,4 @@
+using ApiApplication.Api.Utils;
 using ApiApplication.Application;
 using ApiApplication.Application.Abstractions;
 using ApiApplication.Application.Commands;
@@ -5,7 +6,6 @@ using ApiApplication.Application.Configuration;
 using ApiApplication.Database;
 using ApiApplication.Database.Repositories;
 using ApiApplication.Database.Repositories.Abstractions;
-using ApiApplication.Utils;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -73,6 +73,7 @@ namespace ApiApplication
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+ 
             }
 
             app.UseHttpsRedirection();
@@ -84,12 +85,15 @@ namespace ApiApplication
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-            });
-
-            SampleData.Initialize(app);
+            });        
 
             app.UseSwagger();
 
+            var seedData = Configuration.GetValue<bool>("SeedSampleData");
+            if (seedData)
+            {
+                SampleData.Initialize(app);
+            }
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1"));
         }
     }

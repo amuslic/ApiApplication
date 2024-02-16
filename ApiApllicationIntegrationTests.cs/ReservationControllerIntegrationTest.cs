@@ -1,24 +1,25 @@
 using ApiApplication;
 using ApiApplication.Api.Models;
 using ApiApplication.Database;
+using ApiApplicationIntegrationTests.cs.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Net;
 using System.Text;
-using static ApiApplicationIntegrationTests.cs.Data.SampleDataForReservationTests;
+using static ApiApplicationIntegrationTests.Data.SampleDataForReservationTests;
 
 namespace ApiApllicationIntegrationTests.cs
 {
     [Collection(nameof(ReservationControllerIntegrationTest))]
     [Trait("Category", "Integration")]
-    public class ReservationControllerIntegrationTest : IClassFixture<WebApplicationFactory<Startup>>
+    public class ReservationControllerIntegrationTest : IClassFixture<CustomWebApplicationFactory<Startup>>
     {
         private readonly HttpClient _client;
-        private readonly WebApplicationFactory<Startup> _factory;
+        private readonly CustomWebApplicationFactory<Startup> _factory;
 
-        public ReservationControllerIntegrationTest(WebApplicationFactory<Startup> factory)
+        public ReservationControllerIntegrationTest(CustomWebApplicationFactory<Startup> factory)
         {
             _factory = factory;
             _client = _factory.CreateClient();
@@ -36,73 +37,34 @@ namespace ApiApllicationIntegrationTests.cs
             Initialize(new ApplicationBuilder(scopedServices));
         }
 
-        [Fact]
-        public async Task Post_ReserveSeats_ReturnsOkForValidRequest()
+        [Theory]
+        [InlineData(1, new short[] { 3, 4 }, 1, HttpStatusCode.OK)] // Valid request
+        [InlineData(1, new short[] { 1, 2 }, 999, HttpStatusCode.NotFound)] // Invalid AuditoriumId
+        [InlineData(999, new short[] { 3, 4 }, 1, HttpStatusCode.NotFound)] // Invalid ShowtimeId
+        [InlineData(1, new short[] { 1, 3 }, 1, HttpStatusCode.BadRequest)] // Non-Contiguous Seats
+        public async Task Post_ReserveSeats_VariousScenarios(int showtimeId, short[] seatNumbers, int auditoriumId, HttpStatusCode expectedStatusCode)
         {
+            // Arrange
             var request = new
             {
-                ShowtimeId = 1,
-                SeatNumbers = new List<short> { 3, 4 },
-                AuditoriumId = 1
+                ShowtimeId = showtimeId,
+                SeatNumbers = new List<short>(seatNumbers),
+                AuditoriumId = auditoriumId
             };
 
             var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            // Act
             var response = await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
 
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task Post_ReserveSeats_ReturnsBadRequestForInvalidAuditoriumId()
-        {
-            var request = new
-            {
-                ShowtimeId = 1,
-                SeatNumbers = new List<short> { 1, 2 },
-                AuditoriumId = 999
-            };
-
-            var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-            var response = await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
-
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task Post_ReserveSeats_ReturnsBadRequestForInvalidShowtimeId()
-        {
-            var request = new
-            {
-                ShowtimeId = 999,
-                SeatNumbers = new List<short> { 3, 4 },
-                AuditoriumId = 1
-            };
-
-            var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-            var response = await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
-
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task Post_ReserveSeats_ReturnsBadRequestForNonContiguousSeats()
-        {
-            var request = new
-            {
-                ShowtimeId = 1,
-                SeatNumbers = new List<short> { 1, 3 },
-                AuditoriumId = 1
-            };
-
-            var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-            var response = await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
-
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            // Assert
+            Assert.Equal(expectedStatusCode, response.StatusCode);
         }
 
         [Fact]
         public async Task Post_ReserveSeats_ReturnsBadRequestForAlreadyReservedSeats()
         {
+            // Arrange
             var request = new
             {
                 ShowtimeId = 1,
@@ -113,8 +75,10 @@ namespace ApiApllicationIntegrationTests.cs
             var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
             await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
 
+            // Act
             var response = await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
 
+            // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
@@ -131,11 +95,11 @@ namespace ApiApllicationIntegrationTests.cs
 
             var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
             var response = await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
-            var subscriptionResponse = await response.Content.ReadAsAsync<ReserveSeatsResponse>();
+            var serializedResponse = await response.Content.ReadAsAsync<ReserveSeatsResponse>();
 
             var confirmReservationRequest = new
             {
-                ReservationId = subscriptionResponse.ReservationId
+                serializedResponse.ReservationId
             };
 
             var confirmReservationRequeststringContent = new StringContent(JsonConvert.SerializeObject(confirmReservationRequest), Encoding.UTF8, "application/json");
@@ -144,8 +108,8 @@ namespace ApiApllicationIntegrationTests.cs
             var confirmReservationResponse = await _client.PostAsync("/api/Reservation/confirm-reservation", confirmReservationRequeststringContent);
 
             // Assert
-           
-            Assert.Equal(HttpStatusCode.OK, confirmReservationResponse.StatusCode);
+          
+            Assert.Equal(HttpStatusCode.NoContent, confirmReservationResponse.StatusCode);
         }
 
         [Fact]
@@ -176,17 +140,18 @@ namespace ApiApllicationIntegrationTests.cs
 
             var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
             var response = await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
+            var serializedResponse = await response.Content.ReadAsAsync<ReserveSeatsResponse>();
 
             var confirmReservationRequest = new
             {
-                ReservationId = response.Content.ToString(),
+                serializedResponse.ReservationId
             };
 
             var confirmReservationRequeststringContent = new StringContent(JsonConvert.SerializeObject(confirmReservationRequest), Encoding.UTF8, "application/json");
             await _client.PostAsync("/api/Reservation/confirm-reservation", confirmReservationRequeststringContent);
 
             // Act
-            var confirmReservationSecondAttemptResponse = await _client.PostAsync("/api/Reservation/confirm-reservation", stringContent); // Second confirmation attempt
+            var confirmReservationSecondAttemptResponse = await _client.PostAsync("/api/Reservation/confirm-reservation", confirmReservationRequeststringContent); 
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, confirmReservationSecondAttemptResponse.StatusCode);

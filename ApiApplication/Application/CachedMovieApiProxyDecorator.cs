@@ -18,27 +18,13 @@ namespace ApiApplication.Application
 
         public async Task<showListResponse> GetAllAsync()
         {
-            var cacheKey = "AllMovies";
-            var cachedData = await _cacheService.GetAsync<showListResponse>(cacheKey);
-            if (cachedData != null)
-            {
-                return cachedData;
-            }
-
             var response = await _decoratedApiProxy.GetAllAsync();
-
-            if (response != null)
-            {
-                await _cacheService.SetAsync(cacheKey, response);
-            }
-
             return response;
         }
 
         public async Task<showResponse> GetByIdAsync(string id)
         {
-            // use constant -milan jovanovic
-            var cacheKey = $"MovieDetails-{id}";
+            var cacheKey = Utils.CacheKeys.MemberById(id);
             var cachedData = await _cacheService.GetAsync<showResponse>(cacheKey);
             if (cachedData != null)
             {

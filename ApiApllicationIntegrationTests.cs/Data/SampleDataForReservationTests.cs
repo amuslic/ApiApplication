@@ -3,7 +3,7 @@ using ApiApplication.Database;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ApiApplicationIntegrationTests.cs.Data
+namespace ApiApplicationIntegrationTests.Data
 {
     public static class SampleDataForReservationTests
     {

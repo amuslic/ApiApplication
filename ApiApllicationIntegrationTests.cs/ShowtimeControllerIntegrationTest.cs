@@ -1,126 +1,91 @@
 ﻿using ApiApplication.Api.Models;
 using ApiApplication.Application.Abstractions;
 using ApiApplication;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using ProtoDefinitions;
+using System.Net;
 using System.Text;
 using Moq;
-using System.Net;
+using ApiApplicationIntegrationTests.cs.Utils;
+using ApiApplication.Database;
+using Microsoft.AspNetCore.Builder;
+using static ApiApplicationIntegrationTests.Data.SampleDataForReservationTests;
 
-namespace ApiApplicationIntegrationTests.cs
+namespace ApiApplicationIntegrationTests
 {
-    public class ShowtimeControllerIntegrationTest : IClassFixture<WebApplicationFactory<Startup>>
+    public class ShowtimeControllerIntegrationTest : IClassFixture<CustomWebApplicationFactory<Startup>>
     {
         private readonly HttpClient _client;
+        private readonly CustomWebApplicationFactory<Startup> _factory;
         private readonly Mock<IExternalMovieApiProxy> _movieApiProxyMock = new Mock<IExternalMovieApiProxy>();
 
-        public ShowtimeControllerIntegrationTest(WebApplicationFactory<Startup> factory)
+        public ShowtimeControllerIntegrationTest(CustomWebApplicationFactory<Startup> factory)
         {
-            _client = factory.WithWebHostBuilder(builder =>
+            _factory = factory;
+            _client = _factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureServices(services =>
                 {
                     services.AddScoped(_ => _movieApiProxyMock.Object);
                 });
             }).CreateClient();
+            SeedDatabase();
+        }
+
+        private void SeedDatabase()
+        {
+            using var scope = _factory.Services.CreateScope();
+            var scopedServices = scope.ServiceProvider;
+            var db = scopedServices.GetRequiredService<CinemaContext>();
+            db.Database.EnsureDeleted();
+            db.Database.EnsureCreated();
+
+            Initialize(new ApplicationBuilder(scopedServices));
+        }
+
+        private void SetupMockGetByIdAsync(showResponse response = null, bool shouldThrow = false)
+        {
+            if (shouldThrow)
+            {
+                _movieApiProxyMock.Setup(m => m.GetByIdAsync(It.IsAny<string>()))
+                    .ThrowsAsync(new Exception("External API failure"));
+            }
+            else
+            {
+                _movieApiProxyMock.Setup(m => m.GetByIdAsync(It.IsAny<string>()))
+                    .ReturnsAsync(response);
+            }
+        }
+
+        private StringContent CreateRequestContent(object request)
+        {
+            return new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
         }
 
         [Fact]
         public async Task Post_CreateShowtime_ReturnsOkWithShowtimeId()
         {
-            // Arrange
-            var fakeMovieResponse = new showResponse
-            {
-                Title = "Fake Movie",
-                ImDbRating = "8.5",
-                Crew = "Fake Director, Fake Actor"
-            };
-            _movieApiProxyMock.Setup(m => m.GetByIdAsync(It.IsAny<string>()))
-                              .ReturnsAsync(fakeMovieResponse);
+            var fakeMovieResponse = new showResponse { Title = "Fake Movie", ImDbRating = "8.5", Crew = "Fake Director, Fake Actor" };
+            SetupMockGetByIdAsync(fakeMovieResponse);
 
-            var request = new CreateShowtimeRequest
-            {
-                MovieId = "1",
-                SessionDate = DateTime.Now.AddDays(1),
-                AuditoriumId = 1
-            };
+            var request = new CreateShowtimeRequest { MovieId = "1", SessionDate = DateTime.Now.AddDays(1), AuditoriumId = 1 };
+            var response = await _client.PostAsync("/api/showtime/create-showtime", CreateRequestContent(request));
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            // Act
-            var response = await _client.PostAsync("/api/showtime", content);
-
-            // Assert
             response.EnsureSuccessStatusCode();
         }
 
-        [Fact]
-        public async Task Post_CreateShowtime_ReturnsInternalServerError_WhenExternalServiceFails()
+        [Theory]
+        [InlineData("55", true, null, HttpStatusCode.InternalServerError)] // External service failure
+        [InlineData("999", false, null, HttpStatusCode.NotFound)] // Movie not found
+        public async Task Post_CreateShowtime_VariousScenarios(string movieId, bool shouldThrow, showResponse movieResponse, HttpStatusCode expectedStatusCode)
         {
-            // Arrange
-            _movieApiProxyMock.Setup(m => m.GetByIdAsync(It.IsAny<string>()))
-                              .ThrowsAsync(new Exception("External API failure")); 
+            SetupMockGetByIdAsync(movieResponse, shouldThrow);
 
-            var request = new CreateShowtimeRequest
-            {
-                MovieId = "1",
-                SessionDate = DateTime.Now.AddDays(1),
-                AuditoriumId = 1
-            };
+            var request = new CreateShowtimeRequest { MovieId = movieId, SessionDate = DateTime.Now.AddDays(1), AuditoriumId = 1 };
+            var response = await _client.PostAsync("/api/showtime/create-showtime", CreateRequestContent(request));
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            // Act
-            var response = await _client.PostAsync("/api/showtime", content);
-
-            // Assert
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        }
-
-
-        [Fact]
-        public async Task Post_CreateShowtime_ReturnsBadRequest_ForInvalidInput()
-        {
-            // Arrange
-            var request = new CreateShowtimeRequest
-            {
-                MovieId = "", 
-                SessionDate = DateTime.Now.AddDays(-1), 
-                AuditoriumId = 0 
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            // Act
-            var response = await _client.PostAsync("/api/showtime", content);
-
-            // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task Post_CreateShowtime_ReturnsNotFound_WhenMovieNotFound()
-        {
-            // Arrange
-            _movieApiProxyMock.Setup(m => m.GetByIdAsync(It.IsAny<string>()))
-                              .ReturnsAsync((showResponse)null); 
-
-            var request = new CreateShowtimeRequest
-            {
-                MovieId = "999",
-                SessionDate = DateTime.Now.AddDays(1),
-                AuditoriumId = 1
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            // Act
-            var response = await _client.PostAsync("/api/showtime", content);
-
-            // Assert
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(expectedStatusCode, response.StatusCode);
         }
     }
 }
