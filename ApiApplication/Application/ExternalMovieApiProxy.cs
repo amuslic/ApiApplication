@@ -18,6 +18,7 @@ namespace ApiApplication.Application
     public class ExternalMovieApiProxy : IExternalMovieApiProxy
     {
         private readonly MoviesApi.MoviesApiClient _client;
+        private GrpcChannel _channel;
         private readonly string _apiKey;
 
         public ExternalMovieApiProxy(IOptionsMonitor<ExternalMovieProviderConfiguration> movieProviderOptions)
@@ -30,8 +31,8 @@ namespace ApiApplication.Application
                 ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             };
 
-            var channel = GrpcChannel.ForAddress(options.Url, new GrpcChannelOptions { HttpHandler = httpHandler });
-            _client = new MoviesApi.MoviesApiClient(channel);
+            _channel = GrpcChannel.ForAddress(options.Url, new GrpcChannelOptions { HttpHandler = httpHandler });
+            _client = new MoviesApi.MoviesApiClient(_channel);
         }
 
         private Metadata GetDefaultHeaders()
@@ -77,7 +78,6 @@ namespace ApiApplication.Application
                         $"Movie with id {id} doesnt exist");
                 }
             }
-
 
             if (movie.Data.TryUnpack<showResponse>(out var data))
             {
