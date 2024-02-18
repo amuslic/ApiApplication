@@ -3,7 +3,7 @@ using System;
 
 namespace ApiApplication.Application.Commands
 {
-    public class ConfirmReservationCommand : IRequest
+    public class ConfirmReservationCommand : IRequest<Unit>
     {
         public Guid ReservationId { get; }
 

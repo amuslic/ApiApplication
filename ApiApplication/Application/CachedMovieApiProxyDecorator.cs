@@ -9,7 +9,6 @@ namespace ApiApplication.Application
         private readonly IExternalMovieApiProxy _decoratedApiProxy;
         private readonly ICacheService _cacheService;
 
-
         public CachedMovieApiProxyDecorator(IExternalMovieApiProxy decoratedApiProxy, ICacheService cacheService)
         {
             _decoratedApiProxy = decoratedApiProxy;

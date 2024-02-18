@@ -22,8 +22,4 @@
     <Protobuf Include="movies.proto" GrpcServices="Client" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Application\Converters\" />
-  </ItemGroup>
-
 </Project>

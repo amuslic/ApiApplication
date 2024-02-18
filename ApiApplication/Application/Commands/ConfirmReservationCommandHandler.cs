@@ -8,16 +8,17 @@ using Microsoft.AspNetCore.Http;
 
 namespace ApiApplication.Application.Commands
 {
-    public class ConfirmReservationCommandHandler : IRequestHandler<ConfirmReservationCommand>
+    public class ConfirmReservationCommandHandler : IRequestHandler<ConfirmReservationCommand, Unit>
     {
         private readonly ITicketsRepository _ticketsRepository;
 
-        public ConfirmReservationCommandHandler(ITicketsRepository ticketsRepository)
+        public ConfirmReservationCommandHandler(
+            ITicketsRepository ticketsRepository)
         {
             _ticketsRepository = ticketsRepository;
         }
 
-        public async Task Handle(ConfirmReservationCommand request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(ConfirmReservationCommand request, CancellationToken cancellationToken)
         {
             var ticket = await _ticketsRepository.GetAsync(request.ReservationId, cancellationToken);
 
@@ -38,6 +39,8 @@ namespace ApiApplication.Application.Commands
 
             ticket.Paid = true;
             await _ticketsRepository.ConfirmPaymentAsync(ticket, cancellationToken);
+
+            return Unit.Value;
         }
     }
 }

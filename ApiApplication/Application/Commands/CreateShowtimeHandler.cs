@@ -6,7 +6,6 @@ using ApiApplication.Database.Repositories.Abstractions;
 using ApiApplication.Application.Abstractions;
 using ApiApplication.Application.Exceptions;
 using Microsoft.AspNetCore.Http;
-using ApiApplication.Database.Repositories;
 
 namespace ApiApplication.Application.Commands
 {

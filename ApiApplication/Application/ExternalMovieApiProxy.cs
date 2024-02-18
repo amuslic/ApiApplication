@@ -12,77 +12,79 @@ using System.Linq;
 using ApiApplication.Application.Exceptions;
 using Microsoft.AspNetCore.Http;
 
-namespace ApiApplication.Application;
-
-public class ExternalMovieApiProxy : IExternalMovieApiProxy
+namespace ApiApplication.Application
 {
-    private readonly MoviesApi.MoviesApiClient _client;
-    private readonly string _apiKey;
 
-    public ExternalMovieApiProxy(IOptionsMonitor<ExternalMovieProviderConfiguration> movieProviderOptions)
+    public class ExternalMovieApiProxy : IExternalMovieApiProxy
     {
-        var options = movieProviderOptions.CurrentValue;
-        _apiKey = options.ApiKey;
+        private readonly MoviesApi.MoviesApiClient _client;
+        private readonly string _apiKey;
 
-        var httpHandler = new HttpClientHandler
+        public ExternalMovieApiProxy(IOptionsMonitor<ExternalMovieProviderConfiguration> movieProviderOptions)
         {
-            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-        };
+            var options = movieProviderOptions.CurrentValue;
+            _apiKey = options.ApiKey;
 
-        var channel = GrpcChannel.ForAddress(options.Url, new GrpcChannelOptions { HttpHandler = httpHandler });
-        _client = new MoviesApi.MoviesApiClient(channel);
-    }
+            var httpHandler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            };
 
-    private Metadata GetDefaultHeaders()
-    {
-        return new Metadata
+            var channel = GrpcChannel.ForAddress(options.Url, new GrpcChannelOptions { HttpHandler = httpHandler });
+            _client = new MoviesApi.MoviesApiClient(channel);
+        }
+
+        private Metadata GetDefaultHeaders()
+        {
+            return new Metadata
         {
             { "X-Apikey", _apiKey }
         };
-    }
+        }
 
-    public async Task<showListResponse> GetAllAsync()
-    {
-        try
+        public async Task<showListResponse> GetAllAsync()
+        {
+            try
+            {
+                var headers = GetDefaultHeaders();
+                var all = await _client.GetAllAsync(new Empty(), new CallOptions(headers));
+                if (all.Data.TryUnpack<showListResponse>(out var data))
+                {
+                    return data;
+                }
+
+                throw new InvalidOperationException("Failed to unpack the showListResponse.");
+            }
+            catch (Exception ex)
+            {
+                throw new ExternalException("Failed to fetch showListResponse.");
+            }
+        }
+
+        public async Task<showResponse> GetByIdAsync(string id)
         {
             var headers = GetDefaultHeaders();
-            var all = await _client.GetAllAsync(new Empty(), new CallOptions(headers));
-            if (all.Data.TryUnpack<showListResponse>(out var data))
+            var request = new IdRequest { Id = id };
+            var movie = await _client.GetByIdAsync(request, new CallOptions(headers));
+
+            if (movie.Exceptions.Any())
+            {
+                // client doesnt have better exception handling, no status code
+                if (movie.Exceptions.FirstOrDefault().Message.Contains("Not found"))
+                {
+                    throw new NotFoundException
+                        (StatusCodes.Status404NotFound,
+                        $"Movie with id {id} doesnt exist");
+                }
+            }
+
+
+            if (movie.Data.TryUnpack<showResponse>(out var data))
             {
                 return data;
             }
 
-            throw new InvalidOperationException("Failed to unpack the showListResponse.");
+            throw new InvalidOperationException("Failed to unpack the showResponse.");
         }
-        catch (Exception ex)
-        {
-            throw new ExternalException("Failed to fetch showListResponse.");
-        }
-    }
-
-    public async Task<showResponse> GetByIdAsync(string id)
-    {
-        var headers = GetDefaultHeaders();
-        var request = new IdRequest { Id = id };
-        var movie = await _client.GetByIdAsync(request, new CallOptions(headers));
-
-        if (movie.Exceptions.Any())
-        {
-            // client doesnt have better exception handling, no status code
-            if (movie.Exceptions.FirstOrDefault().Message.Contains("Not found"))
-            {
-                throw new NotFoundException
-                    (StatusCodes.Status404NotFound, 
-                    $"Movie with id {id} doesnt exist");
-            }
-        }
-                
-               
-        if (movie.Data.TryUnpack<showResponse>(out var data))
-        {
-            return data;
-        }
-
-        throw new InvalidOperationException("Failed to unpack the showResponse.");
     }
 }

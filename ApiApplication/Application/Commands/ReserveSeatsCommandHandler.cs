@@ -15,47 +15,50 @@ namespace ApiApplication.Application.Commands
     {
         private readonly ITicketsRepository _ticketsRepository;
         private readonly IAuditoriumsRepository _auditoriumsRepository;
+        private readonly ISystemClock _systemClock; // Interface to abstract system time
 
         public ReserveSeatsCommandHandler(
             ITicketsRepository ticketsRepository,
-            IAuditoriumsRepository auditoriumsRepository)
+            IAuditoriumsRepository auditoriumsRepository,
+            ISystemClock systemClock) // Injecting a system clock interface for time abstraction
         {
             _ticketsRepository = ticketsRepository;
             _auditoriumsRepository = auditoriumsRepository;
+            _systemClock = systemClock;
         }
 
         public async Task<Guid> Handle(ReserveSeatsCommand request, CancellationToken cancellationToken)
         {
             if (!AreSeatsContiguous(request.SeatNumbers))
             {
-                throw new BadRequestException(StatusCodes.Status400BadRequest, "Seats need to be contiguous");
+                throw new BadRequestException(StatusCodes.Status400BadRequest, "Seats must be contiguous.");
             }
 
             var auditorium = await _auditoriumsRepository.GetAsync(request.AuditoriumId, cancellationToken);
             if (auditorium is null)
             {
-                throw new NotFoundException(StatusCodes.Status404NotFound, $"Auditorium with id {request.AuditoriumId} doesnt exist");
+                throw new NotFoundException(StatusCodes.Status404NotFound, $"Auditorium with ID {request.AuditoriumId} does not exist.");
             }
 
             var showtime = auditorium.Showtimes?.FirstOrDefault(st => st.Id == request.ShowtimeId);
             if (showtime is null)
             {
-                throw new NotFoundException(StatusCodes.Status404NotFound, $"Showtime with id {request.ShowtimeId} doesnt exist");
+                throw new NotFoundException(StatusCodes.Status404NotFound, $"Showtime with ID {request.ShowtimeId} does not exist.");
             }
 
             var ticketsForShowtime = await _ticketsRepository.GetEnrichedAsync(request.ShowtimeId, cancellationToken);
 
-            var recentlyReservedSeats = new HashSet<(short Row, short SeatNumber)>(ticketsForShowtime
-              .Where(t => (DateTime.Now - t.CreatedTime).TotalMinutes < 10)
-              .SelectMany(t => t.Seats)
-              .Select(s => (s.Row, s.SeatNumber)));
+            var recentlyReservedSeats = ticketsForShowtime
+                 .Where(t => (DateTime.Now - t.CreatedTime).TotalMinutes < 10)
+                .SelectMany(t => t.Seats)
+                .Select(s => (s.Row, s.SeatNumber)) // Project to tuple if necessary
+                .ToHashSet();
 
-            var isAnySeatUnavailable = request.SeatNumbers.Any(requestedSeat =>
-                recentlyReservedSeats.Contains((requestedSeat.Row, requestedSeat.SeatNumber)));
-
+            var isAnySeatUnavailable = request.SeatNumbers.Any(seat =>
+                recentlyReservedSeats.Contains((seat.Row, seat.SeatNumber)));
             if (isAnySeatUnavailable)
             {
-                throw new BadRequestException(StatusCodes.Status400BadRequest, "One or more seats are not available or have been reserved/sold within the last 10 minutes.");
+                throw new BadRequestException(StatusCodes.Status400BadRequest, "One or more seats are currently unavailable.");
             }
 
             var selectedSeats = auditorium.Seats.Where(auditoriumSeat =>
@@ -66,22 +69,23 @@ namespace ApiApplication.Application.Commands
             return reservation.Id;
         }
 
-        private bool AreSeatsContiguous(List<SeatReservation> seatReservations)
+        private bool AreSeatsContiguous(IEnumerable<SeatReservation> seatReservations)
         {
-            var groupedByRow = seatReservations.GroupBy(sr => sr.Row).ToList();
-
+            var groupedByRow = seatReservations.GroupBy(sr => sr.Row);
             foreach (var group in groupedByRow)
             {
-                var seatNumbersInRow = group.Select(sr => sr.SeatNumber).OrderBy(n => n).ToList();
-
-                for (int i = 0; i < seatNumbersInRow.Count - 1; i++)
+                var seatsInRow = group.Select(sr => sr.SeatNumber).OrderBy(n => n).ToList();
+                if (seatsInRow.Zip(seatsInRow.Skip(1), (a, b) => b - a).Any(diff => diff != 1))
                 {
-                    if (seatNumbersInRow[i] + 1 != seatNumbersInRow[i + 1])
-                        return false;
+                    return false;
                 }
             }
-
             return true;
         }
+    }
+
+    public interface ISystemClock
+    {
+        DateTime UtcNow { get; }
     }
 }
