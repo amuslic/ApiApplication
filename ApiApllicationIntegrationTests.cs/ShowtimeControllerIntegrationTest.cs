@@ -67,10 +67,10 @@ namespace ApiApplicationIntegrationTests
         {
             // Arrange
             SeedDatabase();
-            var fakeMovieResponse = new showResponse { Title = "Fake Movie", ImDbRating = "8.5", Crew = "Fake Director, Fake Actor" };
+            var fakeMovieResponse = new showResponse {Id = "4", Title = "Fake Movie", ImDbRating = "8.5", Crew = "Fake Director, Fake Actor" };
             SetupMockGetByIdAsync(fakeMovieResponse);
 
-            var request = new CreateShowtimeRequest { MovieId = "1", SessionDate = DateTime.Now.AddDays(1), AuditoriumId = 1 };
+            var request = new CreateShowtimeRequest { MovieId = "4", SessionDate = DateTime.Now.AddDays(1), AuditoriumId = 1 };
             
             // Act
             var response = await _client.PostAsync("/api/showtime/create-showtime", CreateRequestContent(request));

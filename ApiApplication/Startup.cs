@@ -32,6 +32,7 @@ namespace ApiApplication
             services.AddScoped<IExternalMovieApiProxy, ExternalMovieApiProxy>();
             services.Decorate<IExternalMovieApiProxy, CachedMovieApiProxyDecorator>();
             services.AddScoped<ICacheService, CacheService>();
+            services.AddScoped<ISystemTime, SystemTime>();
 
             services.AddTransient<IShowtimesRepository, ShowtimesRepository>();
             services.AddTransient<ITicketsRepository, TicketsRepository>();

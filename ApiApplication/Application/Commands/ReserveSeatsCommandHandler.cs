@@ -8,6 +8,7 @@ using System.Linq;
 using ApiApplication.Application.Exceptions;
 using Microsoft.AspNetCore.Http;
 using ApiApplication.Application.Models;
+using ApiApplication.Application.Abstractions;
 
 namespace ApiApplication.Application.Commands
 {
@@ -15,16 +16,16 @@ namespace ApiApplication.Application.Commands
     {
         private readonly ITicketsRepository _ticketsRepository;
         private readonly IAuditoriumsRepository _auditoriumsRepository;
-        private readonly ISystemClock _systemClock; // Interface to abstract system time
+        private readonly ISystemTime _systemTime; 
 
         public ReserveSeatsCommandHandler(
             ITicketsRepository ticketsRepository,
             IAuditoriumsRepository auditoriumsRepository,
-            ISystemClock systemClock) // Injecting a system clock interface for time abstraction
+            ISystemTime systemTime) 
         {
             _ticketsRepository = ticketsRepository;
             _auditoriumsRepository = auditoriumsRepository;
-            _systemClock = systemClock;
+            _systemTime = systemTime;
         }
 
         public async Task<Guid> Handle(ReserveSeatsCommand request, CancellationToken cancellationToken)
@@ -49,9 +50,9 @@ namespace ApiApplication.Application.Commands
             var ticketsForShowtime = await _ticketsRepository.GetEnrichedAsync(request.ShowtimeId, cancellationToken);
 
             var recentlyReservedSeats = ticketsForShowtime
-                 .Where(t => (DateTime.Now - t.CreatedTime).TotalMinutes < 10)
+                .Where(t => (_systemTime.UtcNow - t.CreatedTime).TotalMinutes < 10)
                 .SelectMany(t => t.Seats)
-                .Select(s => (s.Row, s.SeatNumber)) // Project to tuple if necessary
+                .Select(s => (s.Row, s.SeatNumber))
                 .ToHashSet();
 
             var isAnySeatUnavailable = request.SeatNumbers.Any(seat =>
@@ -82,10 +83,5 @@ namespace ApiApplication.Application.Commands
             }
             return true;
         }
-    }
-
-    public interface ISystemClock
-    {
-        DateTime UtcNow { get; }
     }
 }

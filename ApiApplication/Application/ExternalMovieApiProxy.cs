@@ -68,7 +68,7 @@ namespace ApiApplication.Application
             var request = new IdRequest { Id = id };
             var movie = await _client.GetByIdAsync(request, new CallOptions(headers));
 
-            if (movie.Exceptions.Any())
+            if (movie.Exceptions.Count != 0)
             {
                 // client doesnt have better exception handling, no status code
                 if (movie.Exceptions.FirstOrDefault().Message.Contains("Not found"))
