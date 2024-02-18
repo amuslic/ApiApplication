@@ -28,11 +28,6 @@ namespace ApiApplication.Api.Controllers
         [ProducesResponseType(typeof(ReserveSeatsResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> ReserveSeats([FromBody] ReserveSeatsRequest request)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var seatReservations = request.Seats.Select(s => new SeatReservation()
             {
                 SeatNumber = s.SeatNumber,
@@ -51,8 +46,7 @@ namespace ApiApplication.Api.Controllers
         }
 
         [HttpPost("confirm-reservation")]
-        [ProducesResponseType(typeof(ReserveSeatsResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ConfirmReservation([FromBody] ConfirmReservationRequest request)

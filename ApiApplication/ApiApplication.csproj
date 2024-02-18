@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" Version="2.40.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Scrutor" Version="4.2.2" />
     <PackageReference Include="StackExchange.Redis" Version="2.7.17" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
@@ -24,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Api\Converter\" />
     <Folder Include="Application\Converters\" />
   </ItemGroup>
 
