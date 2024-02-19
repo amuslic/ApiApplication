@@ -9,9 +9,7 @@ using System.Text;
 using Moq;
 using ApiApplicationIntegrationTests.Utils;
 using ApiApplication.Database;
-using Microsoft.AspNetCore.Builder;
 using static ApiApplicationIntegrationTests.Data.SampleDataForReservationTests;
-using System;
 
 namespace ApiApplicationIntegrationTests
 {

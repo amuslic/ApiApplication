@@ -2,10 +2,11 @@
 using MediatR;
 using System.Threading.Tasks;
 using System.Threading;
-using System;
 using ApiApplication.Application.Exceptions;
 using Microsoft.AspNetCore.Http;
 using ApiApplication.Application.Abstractions;
+using Microsoft.Extensions.Options;
+using ApiApplication.Application.Configuration;
 
 namespace ApiApplication.Application.Commands
 {
@@ -13,13 +14,16 @@ namespace ApiApplication.Application.Commands
     {
         private readonly ITicketsRepository _ticketsRepository;
         private readonly ISystemTime _systemTime;
+        private readonly int _reservationExpirationTimeInMinutes;
 
         public ConfirmReservationCommandHandler(
             ITicketsRepository ticketsRepository,
-            ISystemTime systemTime)
+            ISystemTime systemTime,
+           IOptionsMonitor<ReservationConfiguration> reservationSettings)
         {
             _ticketsRepository = ticketsRepository;
             _systemTime = systemTime;
+            _reservationExpirationTimeInMinutes = reservationSettings.CurrentValue.ReservationExpirationTimeInMinutes;
         }
 
         public async Task<Unit> Handle(ConfirmReservationCommand request, CancellationToken cancellationToken)
@@ -36,7 +40,7 @@ namespace ApiApplication.Application.Commands
                 throw new BadRequestException(StatusCodes.Status400BadRequest, $"Reservation with id {request.ReservationId} is already paid");
             }
 
-            if ((_systemTime.UtcNow - ticket.CreatedTime).TotalMinutes > 10)
+            if ((_systemTime.UtcNow - ticket.CreatedTime).TotalMinutes > _reservationExpirationTimeInMinutes)
             {
                 throw new BadRequestException(StatusCodes.Status400BadRequest, $"Reservation with id {request.ReservationId}has expired and cannot be confirmed");
             }

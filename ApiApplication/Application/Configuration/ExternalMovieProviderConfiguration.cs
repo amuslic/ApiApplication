@@ -1,9 +1,9 @@
 ﻿namespace ApiApplication.Application.Configuration
 {
-    public class ExternalMovieProviderConfiguration
+    public record ExternalMovieProviderConfiguration
     {
         public static readonly string ConfigurationKey = "ExternalMovieProvider";
-        public string Url { get; set; }
-        public string ApiKey { get; set; }
+        public string Url { get; init; }
+        public string ApiKey { get; init; }
     }
 }

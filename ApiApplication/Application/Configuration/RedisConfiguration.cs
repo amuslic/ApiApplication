@@ -1,10 +1,10 @@
 ﻿namespace ApiApplication.Application.Configuration
 {
-    public class RedisConfiguration
+    public record RedisConfiguration
     {
         public static readonly string ConfigurationKey = "Redis";
-        public string ConnectionString { get; set; }
-        public int CacheExpirationTimeInMinutes { get; set; }
+        public string ConnectionString { get; init; }
+        public int CacheExpirationTimeInMinutes { get; init; }
     }
 
 }

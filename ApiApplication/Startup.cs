@@ -65,6 +65,7 @@ namespace ApiApplication
 
             services.Configure<RedisConfiguration>(Configuration.GetSection(RedisConfiguration.ConfigurationKey));
             services.Configure<ExternalMovieProviderConfiguration>(Configuration.GetSection(ExternalMovieProviderConfiguration.ConfigurationKey));
+            services.Configure<ReservationConfiguration>(Configuration.GetSection(ReservationConfiguration.ConfigurationKey));
 
         }
 

@@ -9,6 +9,8 @@ using ApiApplication.Application.Exceptions;
 using Microsoft.AspNetCore.Http;
 using ApiApplication.Application.Models;
 using ApiApplication.Application.Abstractions;
+using ApiApplication.Application.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace ApiApplication.Application.Commands
 {
@@ -16,16 +18,20 @@ namespace ApiApplication.Application.Commands
     {
         private readonly ITicketsRepository _ticketsRepository;
         private readonly IAuditoriumsRepository _auditoriumsRepository;
-        private readonly ISystemTime _systemTime; 
+        private readonly ISystemTime _systemTime;
+        private readonly int _reservationExpirationTimeInMinutes;
+
 
         public ReserveSeatsCommandHandler(
             ITicketsRepository ticketsRepository,
             IAuditoriumsRepository auditoriumsRepository,
-            ISystemTime systemTime) 
+            ISystemTime systemTime,
+            IOptionsMonitor<ReservationConfiguration> reservationSettings) 
         {
             _ticketsRepository = ticketsRepository;
             _auditoriumsRepository = auditoriumsRepository;
             _systemTime = systemTime;
+            _reservationExpirationTimeInMinutes = reservationSettings.CurrentValue.ReservationExpirationTimeInMinutes;
         }
 
         public async Task<Guid> Handle(ReserveSeatsCommand request, CancellationToken cancellationToken)
@@ -50,7 +56,7 @@ namespace ApiApplication.Application.Commands
             var ticketsForShowtime = await _ticketsRepository.GetEnrichedAsync(request.ShowtimeId, cancellationToken);
 
             var recentlyReservedSeats = ticketsForShowtime
-                .Where(t => (_systemTime.UtcNow - t.CreatedTime).TotalMinutes < 10)
+                .Where(t => (_systemTime.UtcNow - t.CreatedTime).TotalMinutes < _reservationExpirationTimeInMinutes)
                 .SelectMany(t => t.Seats)
                 .Select(s => (s.Row, s.SeatNumber))
                 .ToHashSet();

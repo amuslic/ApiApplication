@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ApiApplication.Application.Exceptions
+﻿namespace ApiApplication.Application.Exceptions
 {
     public class BadRequestException: BaseException
     {

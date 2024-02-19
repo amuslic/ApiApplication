@@ -2,7 +2,6 @@ using ApiApplication;
 using ApiApplication.Api.Models;
 using ApiApplication.Database;
 using ApiApplicationIntegrationTests.Utils;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Net;

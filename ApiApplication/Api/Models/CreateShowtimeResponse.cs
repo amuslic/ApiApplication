@@ -1,6 +1,4 @@
-﻿using System.Runtime.Serialization;
-
-namespace ApiApplication.Api.Models
+﻿namespace ApiApplication.Api.Models
 {
     public class CreateShowtimeResponse
     {
