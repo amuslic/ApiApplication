@@ -37,20 +37,39 @@ Please provider tests for implemented route
 
 If possible communicate with third party provider through grpc
 
+## Add the Request to cUrls file
+
+We added a file next to this readme named `cUrls.txt`.
+Please add a curl command for each of the commands and queries that you implemented to this file.
+
 
 ## Solution
 To initiate the application, please follow these steps:
 
 1. **Clone the Repository**: Start by cloning the repository to your local machine.
 2. **Install Docker**: Ensure Docker is installed and running on your system. Docker is required to manage the application's containers.
-3. **Run Docker Compose**: Navigate to the project's root directory and execute `docker-compose up`. This command starts the necessary services, including the third-party provider and Redis
+3. **Run Docker Compose**: Navigate to the project's root directory and execute
 
-The application is accessible via `http://localhost/swagger/index.html` by default. Here, you can explore and interact with the API through the Swagger UI, which simplifies the process of testing various endpoints.
+```powershell
+docker-compose up
+```
+
+ This command starts the necessary services, including the third-party provider, along with movie API service (`movieapi`).
+
+## Services
+
+- **movieapi**: Custom API available at `http://localhost:8081` (HTTP) and `https://localhost:8082` (HTTPS).
+- **externalmovieapi**: Third-party API accessible at `http://localhost:7172` (HTTP) and `https://localhost:7443` (HTTPS).
+- **cache**: Redis cache on `localhost:6379`.
+
+## Running the Services
+
+
 
 ## Architecture and Implementation Details
 
 - **MediatR and CQRS Pattern**: The solution implements the MediatR library to follow the CQRS (Command Query Responsibility Segregation) pattern
-- **Grpy**: Communication with third party movie provider is done via grpc client
+- **Grpc**: Communication with third party movie provider is done via grpc client
 - **Redis Cache**: A Redis cache is utilized to store responses from the Provided API. The cache uses protobuf serialization for efficient data storage, which is not human-readable if accessed via a viewer.
 - **Execution Tracking**: Execution times for requests are tracked and logged to the console through MediatR pipeline behavior.
 - **Exception Handling**: The API leverages a .NET exception filter (`onActionExecuted`) to handle exceptions
