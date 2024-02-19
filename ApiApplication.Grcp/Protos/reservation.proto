@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package reservation;
+
+// Importing timestamp for use in messages
+import "google/protobuf/timestamp.proto";
+
+// The reservation service definition.
+service ReservationService {
+  // Reserves seats for a show
+  rpc ReserveSeats (ReserveSeatsRequest) returns (ReserveSeatsResponse);
+  // Confirms a reservation
+  rpc ConfirmReservation (ConfirmReservationRequest) returns (ConfirmReservationResponse);
+}
+
+// ReserveSeats Request Message
+message ReserveSeatsRequest {
+  int32 showtimeId = 1;
+  repeated SeatReservation seats = 2;
+  int32 auditoriumId = 3;
+}
+
+// SeatReservation Message
+message SeatReservation {
+  int32 seatNumber = 1;
+  int32 row = 2;
+}
+
+// ReserveSeats Response Message
+message ReserveSeatsResponse {
+  string reservationId = 1;
+}
+
+// ConfirmReservation Request Message
+message ConfirmReservationRequest {
+  string reservationId = 1;
+}
+
+// ConfirmReservation Response (empty, as no content is returned)
+message ConfirmReservationResponse {
+}

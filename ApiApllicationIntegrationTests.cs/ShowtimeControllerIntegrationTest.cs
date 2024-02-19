@@ -11,9 +11,12 @@ using ApiApplicationIntegrationTests.Utils;
 using ApiApplication.Database;
 using Microsoft.AspNetCore.Builder;
 using static ApiApplicationIntegrationTests.Data.SampleDataForReservationTests;
+using System;
 
 namespace ApiApplicationIntegrationTests
 {
+    [Collection(nameof(ShowtimeControllerIntegrationTest))]
+    [Trait("Category", "Integration")]
     public class ShowtimeControllerIntegrationTest : IClassFixture<CustomWebApplicationFactory<Startup>>
     {
         private readonly HttpClient _client;
@@ -32,15 +35,13 @@ namespace ApiApplicationIntegrationTests
             }).CreateClient();
         }
 
-        private void SeedDatabase()
+        private void SeedDatabase(int movieId, int auditoriumId, int showtimeId)
         {
             using var scope = _factory.Services.CreateScope();
             var scopedServices = scope.ServiceProvider;
             var db = scopedServices.GetRequiredService<CinemaContext>();
-            db.Database.EnsureDeleted();
-            db.Database.EnsureCreated();
 
-            Initialize(new ApplicationBuilder(scopedServices));
+            Initialize(db, movieId, auditoriumId, showtimeId);
         }
 
         private void SetupMockGetByIdAsync(showResponse response = null, bool shouldThrow = false)
@@ -66,11 +67,17 @@ namespace ApiApplicationIntegrationTests
         public async Task Post_CreateShowtime_ReturnsOkWithShowtimeId()
         {
             // Arrange
-            SeedDatabase();
-            var fakeMovieResponse = new showResponse {Id = "4", Title = "Fake Movie", ImDbRating = "8.5", Crew = "Fake Director, Fake Actor" };
+            Random _random = new();
+            var movieId = _random.Next(0, 10000);
+            var auditoriumId = _random.Next(0, 10000);
+            var showtimeId = _random.Next(0, 10000);
+
+            SeedDatabase(movieId, auditoriumId, showtimeId);
+
+            var fakeMovieResponse = new showResponse {Id = movieId.ToString(), Title = "Fake Movie", ImDbRating = "8.5", Crew = "Fake Director, Fake Actor" };
             SetupMockGetByIdAsync(fakeMovieResponse);
 
-            var request = new CreateShowtimeRequest { MovieId = "4", SessionDate = DateTime.Now.AddDays(1), AuditoriumId = 1 };
+            var request = new CreateShowtimeRequest { MovieId = movieId.ToString(), SessionDate = DateTime.Now.AddDays(1), AuditoriumId = auditoriumId  };
             
             // Act
             var response = await _client.PostAsync("/api/showtime/create-showtime", CreateRequestContent(request));

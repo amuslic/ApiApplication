@@ -22,32 +22,28 @@ namespace ApiApplicationIntegrationTests
         {
             _factory = factory;
             _client = _factory.CreateClient();
-          
+
         }
 
-        private void SeedDatabase()
+        private void SeedDatabase(int movieId, int auditoriumId, int showtimeId)
         {
             using var scope = _factory.Services.CreateScope();
             var scopedServices = scope.ServiceProvider;
             var db = scopedServices.GetRequiredService<CinemaContext>();
-            db.Database.EnsureDeleted();
-            db.Database.EnsureCreated();
 
-            Initialize(new ApplicationBuilder(scopedServices));
+            Initialize(db, movieId, auditoriumId, showtimeId);
         }
 
         [Theory]
-        [InlineData(1, new short[] { 1, 3, 1, 4 }, 1, HttpStatusCode.OK)] // Valid request, contiguous seats in the same row
-        [InlineData(1, new short[] { 1, 3, 1, 4 }, 999, HttpStatusCode.NotFound)] // Invalid AuditoriumId, seats in different rows
-        [InlineData(999, new short[] { 1, 3, 1, 4 }, 1, HttpStatusCode.NotFound)] // Invalid ShowtimeId, contiguous seats in the same row
-        [InlineData(1, new short[] { 1, 1, 1, 3 }, 1, HttpStatusCode.BadRequest)] // Non-Contiguous Seats in the same row
+        [MemberData(nameof(GetDynamicTestData))]
         public async Task Post_ReserveSeats_VariousScenarios(
             int showtimeId,
             short[] seatRowsAndNumbers,
-            int auditoriumId, HttpStatusCode expectedStatusCode)
+            int auditoriumId,
+            HttpStatusCode expectedStatusCode)
         {
             // Arrange
-            SeedDatabase();
+            SeedDatabase(showtimeId, auditoriumId, showtimeId); 
 
             var seats = new List<SeatReservationRequest>();
             for (int i = 0; i < seatRowsAndNumbers.Length; i += 2)
@@ -71,12 +67,46 @@ namespace ApiApplicationIntegrationTests
             Assert.Equal(expectedStatusCode, response.StatusCode);
         }
 
-
         [Fact]
-        public async Task Post_ReserveSeats_ReturnsBadRequestForAlreadyReservedSeats()
+        public async Task Post_ReserveSeats_ReturnsNotFoundForNotExistingAuditorium()
         {
             // Arrange
-            SeedDatabase();
+            Random _random = new();
+            var movieId = _random.Next(0, 10000);
+            var auditoriumId = _random.Next(2, 10000);
+            var showtimeId = _random.Next(0, 10000);
+            SeedDatabase(movieId, auditoriumId, showtimeId);
+
+            var request = new ReserveSeatsRequest()
+            {
+                ShowtimeId = showtimeId,
+                Seats = [
+                  new() { RowNumber = 1, SeatNumber = 2 },
+                    new() { RowNumber = 1, SeatNumber = 3 },
+                    new() { RowNumber = 2, SeatNumber = 3 },
+                    new() { RowNumber = 2, SeatNumber = 4 }],
+                AuditoriumId = 1
+            };
+
+            var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Post_ReserveSeats_ReturnsNotFoundForNotExistingShowtime()
+        {
+            // Arrange
+            Random _random = new();
+            var movieId = _random.Next(0, 10000);
+            var auditoriumId = _random.Next(0, 10000);
+            var showtimeId = _random.Next(2, 10000);
+            SeedDatabase(movieId, auditoriumId, showtimeId);
+
             var request = new ReserveSeatsRequest()
             {
                 ShowtimeId = 1,
@@ -85,7 +115,37 @@ namespace ApiApplicationIntegrationTests
                     new() { RowNumber = 1, SeatNumber = 3 },
                     new() { RowNumber = 2, SeatNumber = 3 },
                     new() { RowNumber = 2, SeatNumber = 4 }],
-                AuditoriumId = 1
+                AuditoriumId = auditoriumId
+            };
+
+            var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Post_ReserveSeats_ReturnsBadRequestForAlreadyReservedSeats()
+        {
+            // Arrange
+            Random _random = new();
+            var movieId = _random.Next(0, 10000);
+            var auditoriumId = _random.Next(0, 10000);
+            var showtimeId = _random.Next(0, 10000);
+            SeedDatabase(movieId, auditoriumId, showtimeId);
+
+            var request = new ReserveSeatsRequest()
+            {
+                ShowtimeId = showtimeId,
+                Seats = [
+                  new() { RowNumber = 1, SeatNumber = 2 },
+                    new() { RowNumber = 1, SeatNumber = 3 },
+                    new() { RowNumber = 2, SeatNumber = 3 },
+                    new() { RowNumber = 2, SeatNumber = 4 }],
+                AuditoriumId = auditoriumId
             };
             var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
             await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
@@ -101,16 +161,21 @@ namespace ApiApplicationIntegrationTests
         public async Task Post_ConfirmReservation_ReturnsOkForValidRequest()
         {
             // Arrange
-            SeedDatabase();
+            Random _random = new();
+            var movieId = _random.Next(0, 10000);
+            var auditoriumId = _random.Next(0, 10000);
+            var showtimeId = _random.Next(0, 10000);
+            SeedDatabase(movieId, auditoriumId, showtimeId);
+
             var request = new ReserveSeatsRequest()
             {
-                ShowtimeId = 1,
+                ShowtimeId = showtimeId,
                 Seats = [
-                    new() { RowNumber = 1, SeatNumber = 2},
-                    new() { RowNumber = 1, SeatNumber = 3},
+                    new() { RowNumber = 1, SeatNumber = 2 },
+                    new() { RowNumber = 1, SeatNumber = 3 },
                     new() { RowNumber = 2, SeatNumber = 3 },
                     new() { RowNumber = 2, SeatNumber = 4 }],
-                AuditoriumId = 1
+                AuditoriumId = auditoriumId
             };
 
             var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
@@ -128,7 +193,7 @@ namespace ApiApplicationIntegrationTests
             var confirmReservationResponse = await _client.PostAsync("/api/Reservation/confirm-reservation", confirmReservationRequeststringContent);
 
             // Assert
-          
+
             Assert.Equal(HttpStatusCode.NoContent, confirmReservationResponse.StatusCode);
         }
 
@@ -136,14 +201,13 @@ namespace ApiApplicationIntegrationTests
         public async Task Post_ConfirmReservation_ReturnsBadRequestForNonExistentReservation()
         {
             // Arrange
-            SeedDatabase();
             var request = new
             {
                 ReservationId = 999
             };
 
             var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-           
+
             // Act
             var response = await _client.PostAsync("/api/Reservation/confirm-reservation", stringContent);
 
@@ -155,17 +219,22 @@ namespace ApiApplicationIntegrationTests
         public async Task Post_ConfirmReservation_ReturnsBadRequestForAlreadyConfirmedReservation()
         {
             // Arrange
-            SeedDatabase();
+            Random _random = new();
+            var movieId = _random.Next(0, 10000);
+            var auditoriumId = _random.Next(0, 10000);
+            var showtimeId = _random.Next(0, 10000);
+            SeedDatabase(movieId, auditoriumId, showtimeId);
             var request = new ReserveSeatsRequest()
             {
-                ShowtimeId = 1,
+                ShowtimeId = showtimeId,
                 Seats = [
-                new() { RowNumber = 1, SeatNumber = 2 },
+               new() { RowNumber = 1, SeatNumber = 2 },
                     new() { RowNumber = 1, SeatNumber = 3 },
                     new() { RowNumber = 2, SeatNumber = 3 },
                     new() { RowNumber = 2, SeatNumber = 4 }],
-                AuditoriumId = 1
+                AuditoriumId = auditoriumId
             };
+
 
             var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
             var response = await _client.PostAsync("/api/Reservation/reserve-seats", stringContent);
@@ -180,10 +249,17 @@ namespace ApiApplicationIntegrationTests
             await _client.PostAsync("/api/Reservation/confirm-reservation", confirmReservationRequeststringContent);
 
             // Act
-            var confirmReservationSecondAttemptResponse = await _client.PostAsync("/api/Reservation/confirm-reservation", confirmReservationRequeststringContent); 
+            var confirmReservationSecondAttemptResponse = await _client.PostAsync("/api/Reservation/confirm-reservation", confirmReservationRequeststringContent);
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, confirmReservationSecondAttemptResponse.StatusCode);
+        }
+
+        public static IEnumerable<object[]> GetDynamicTestData()
+        {
+            var random = new Random();
+            yield return new object[] { random.Next(1, 999), new short[] { 1, 3, 1, 4 }, random.Next(1, 999), HttpStatusCode.OK };
+            yield return new object[] { random.Next(1, 999), new short[] { 1, 1, 1, 3 }, random.Next(1, 999), HttpStatusCode.BadRequest };
         }
     }
 }

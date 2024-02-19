@@ -1,42 +1,35 @@
 ﻿using ApiApplication.Database.Entities;
 using ApiApplication.Database;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace ApiApplicationIntegrationTests.Data
 {
     public static class SampleDataForReservationTests
     {
-        public static void Initialize(IApplicationBuilder app)
+        public static void Initialize(CinemaContext context, int movieId, int auditoriumId, int showtimeId)
         {
-            using var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
-            var context = serviceScope.ServiceProvider.GetService<CinemaContext>();
-            context.Database.EnsureDeleted();
-            context.Database.EnsureCreated();
-
-            if (!context.Auditoriums.Any())
+            if (!context.Auditoriums.Any(a => a.Id == auditoriumId))
             {
                 var auditorium = new AuditoriumEntity
                 {
-                    Id = 1,
+                    Id = auditoriumId,
                     Showtimes = new List<ShowtimeEntity>
                     {
-                        new() {
-                            Id = 1,
-                            SessionDate = DateTime.Now.AddDays(1), 
-                            Movie = new MovieEntity
+                        new ShowtimeEntity {
+                            Id = showtimeId,
+                            SessionDate = DateTime.Now.AddDays(1),
+                           Movie = new MovieEntity
                             {
-                                Id = 1,
+                                Id = movieId,
                                 Title = "Inception",
                                 ImdbId = "tt1375666",
                                 ReleaseDate = new DateTime(2010, 1, 14),
                                 Stars = "Leonardo DiCaprio, Joseph Gordon-Levitt, Ellen Page, Ken Watanabe"
                             },
-                            AuditoriumId = 1,
-                            Tickets = new List<TicketEntity>()                          
+                            AuditoriumId = auditoriumId,
+                            Tickets = new List<TicketEntity>()
                         }
                     },
-                    Seats = GenerateSeats(1, 5, 10) 
+                    Seats = GenerateSeats(auditoriumId, 5, 10)
                 };
 
                 context.Auditoriums.Add(auditorium);
@@ -58,3 +51,4 @@ namespace ApiApplicationIntegrationTests.Data
         }
     }
 }
+

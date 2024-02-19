@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package reservation;
+
+service ReservationService {
+  rpc ReserveSeats (ReserveSeatsRequest) returns (ReserveSeatsResponse);
+  rpc ConfirmReservation (ConfirmReservationRequest) returns (google.protobuf.Empty);
+}
+
+message ReserveSeatsRequest {
+  string showtimeId = 1;
+  repeated SeatReservation seats = 2;
+  string auditoriumId = 3;
+}
+
+message SeatReservation {
+  string seatNumber = 1;
+  int32 row = 2;
+}
+
+message ReserveSeatsResponse {
+  string reservationId = 1;
+}
+
+message ConfirmReservationRequest {
+  string reservationId = 1;
+}
