@@ -2,7 +2,7 @@ Please add the cURLs of your tests here:
 
 Create showtime:
 curl -X 'POST' \
-  'https://localhost:7629/api/Showtime/create-showtime' \
+  'https://localhost:8082/api/Showtime/create-showtime' \
   -H 'accept: text/plain' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -12,7 +12,7 @@ curl -X 'POST' \
 }'
 
 curl -X 'POST' \
-  'https://localhost:7629/api/Showtime/create-showtime' \
+  'https://localhost:8082/api/Showtime/create-showtime' \
   -H 'accept: text/plain' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -22,7 +22,7 @@ curl -X 'POST' \
 }'
 
 curl -X 'POST' \
-  'https://localhost:7629/api/Showtime/create-showtime' \
+  'https://localhost:8082/api/Showtime/create-showtime' \
   -H 'accept: text/plain' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -32,7 +32,7 @@ curl -X 'POST' \
 
 Reserve seats
 curl -X 'POST' \
-  'https://localhost:7629/api/Reservation/reserve-seats' \
+  'https://localhost:8082/api/Reservation/reserve-seats' \
   -H 'accept: text/plain' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -48,7 +48,7 @@ curl -X 'POST' \
 
 {
 curl -X 'POST' \
-  'https://localhost:7629/api/Reservation/reserve-seats' \
+  'https://localhost:8082/api/Reservation/reserve-seats' \
   -H 'accept: text/plain' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -63,7 +63,7 @@ curl -X 'POST' \
 }'
 
 curl -X 'POST' \
-  'https://localhost:7629/api/Reservation/reserve-seats' \
+  'https://localhost:8082/api/Reservation/reserve-seats' \
   -H 'accept: text/plain' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -78,7 +78,7 @@ curl -X 'POST' \
 }'
 
 curl -X 'POST' \
-  'https://localhost:7629/api/Reservation/reserve-seats' \
+  'https://localhost:8082/api/Reservation/reserve-seats' \
   -H 'accept: text/plain' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -121,7 +121,7 @@ curl -X 'POST' \
 
 Confirm reservation:
 curl -X 'POST' \
-  'https://localhost:7629/api/Reservation/confirm-reservation' \
+  'https://localhost:8082/api/Reservation/confirm-reservation' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
   -d '{
