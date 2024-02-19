@@ -46,7 +46,7 @@ curl -X 'POST' \
   "auditoriumId": 1
 }'
 
-{
+
 curl -X 'POST' \
   'https://localhost:8082/api/Reservation/reserve-seats' \
   -H 'accept: text/plain' \
